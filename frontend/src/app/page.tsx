@@ -34,7 +34,7 @@ function EasyBooking({ onClose }: { onClose:()=>void }) {
   const [step,    setStep]    = useState<BookStep>("dept");
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState("");
-  const [bk, setBk] = useState({ department:"", date:"", dateLabel:"", time:"", name:"", phone:"" });
+  const [bk, setBk] = useState({ department:"", date:"", dateLabel:"", time:"", name:"", phone:"", email:"" });
   const dates = getAvailableDates();
   const STEPS: BookStep[] = ["dept","date","time","details","confirm","done"];
   const idx      = STEPS.indexOf(step);
@@ -47,7 +47,7 @@ function EasyBooking({ onClose }: { onClose:()=>void }) {
       const res = await fetch(`${API_BASE}/book`, {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ patient_name:bk.name, phone:bk.phone, department:bk.department,
-          preferred_date:bk.date, preferred_time:bk.time, symptoms:"", session_id:`easy_${Date.now()}` }),
+          preferred_date:bk.date, preferred_time:bk.time, email:bk.email||"", symptoms:"", session_id:`easy_${Date.now()}` }),
       });
       const data = await res.json();
       if (data.success) setStep("done");
@@ -57,8 +57,8 @@ function EasyBooking({ onClose }: { onClose:()=>void }) {
   }
 
   return (
-    <div style={{position:"fixed",inset:0,zIndex:1000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
-      <div style={{width:"100%",maxWidth:480,maxHeight:"92vh",background:"#fff",borderRadius:"24px 24px 0 0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+    <div style={{position:"fixed",inset:0,zIndex:2000,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"flex-end",justifyContent:"center"}}>
+      <div style={{width:"100%",maxWidth:"100%",maxHeight:"92vh",background:"#fff",borderRadius:"24px 24px 0 0",display:"flex",flexDirection:"column",overflow:"hidden"}}>
 
         {/* Header */}
         <div style={{background:"linear-gradient(135deg,#0A5C96,#1a7bc4)",padding:"16px 20px 12px"}}>
@@ -139,6 +139,12 @@ function EasyBooking({ onClose }: { onClose:()=>void }) {
                     placeholder="10 digit" maxLength={10} type="tel" style={{...INP,paddingLeft:44}}/>
                 </div>
                 <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Confirmation is number par aayegi</div>
+              </div>
+              <div>
+                <label style={LBL}>Email Address <span style={{color:"#94a3b8",fontWeight:400}}>(optional)</span></label>
+                <input value={bk.email||""} onChange={e=>setBk(b=>({...b,email:e.target.value}))}
+                  placeholder="aapki@email.com" type="email" style={INP}/>
+                <div style={{fontSize:11,color:"#64748b",marginTop:4}}>Confirmation email bhi aayegi</div>
               </div>
               {error && <div style={ERR}>{error}</div>}
               <button onClick={() => { if(!bk.name.trim()||bk.phone.length<10){setError("Naam aur phone zaroori hai.");return;} setError(""); setStep("confirm"); }}
