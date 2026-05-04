@@ -1,0 +1,12 @@
+[
+  {"q": "OPD timing kya hai?", "a": "Unique Hospital ki OPD Monday se Saturday, subah 9 baje se raat 8 baje tak hai."},
+  {"q": "Emergency 24/7 available hai?", "a": "Haan, humari emergency services 24 ghante, 7 din available hai."},
+  {"q": "Hospital ka address kya hai?", "a": "77, Motia Talab Rd, Kohefiza, Bhopal, Madhya Pradesh."},
+  {"q": "Kaunse departments available hain?", "a": "Orthopedics, Joint Replacement, Spine Surgery, Trauma Care, aur General Medicine."},
+  {"q": "Appointment kaise book karein?", "a": "Aap is AI chat se appointment book kar sakte hain, ya WhatsApp par message kar sakte hain."},
+  {"q": "Fees kitni hai?", "a": "OPD consultation fees department ke hisab se alag hoti hai. Book karne ke baad receptionist confirm karegi."},
+  {"q": "Knee replacement ka experience kaisa hai?", "a": "Humne 5000+ successful surgeries ki hain, 15+ saal ke experience ke saath."},
+  {"q": "What is the hospital phone number?", "a": "You can reach us at +91-9575877759 or book via WhatsApp/this chat."},
+  {"q": "X-ray ya MRI facility hai?", "a": "Haan, humare paas advanced diagnostics — X-ray, MRI, CT Scan — sab available hain."},
+  {"q": "Insurance accepted hai?", "a": "Haan, humne major insurance panels accept karte hain. Details ke liye reception se contact karein."}
+]
