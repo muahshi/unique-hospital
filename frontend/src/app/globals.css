@@ -2,48 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --blue-primary: #0A5C96;
-  --blue-dark: #084a7a;
-  --blue-light: #e8f3fb;
-  --blue-mid: #1a7bc4;
-  --green-wa: #25D366;
-  --green-wa-dark: #1da851;
-  --white: #FFFFFF;
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-500: #64748b;
-  --gray-700: #334155;
-  --gray-900: #0f172a;
-  --text-main: #1a2e44;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html { scroll-behavior: smooth; }
-
-body {
-  background: #FFFFFF;
-  color: var(--text-main);
-  font-family: var(--font-dm-sans), 'DM Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Smooth tap highlight removal on mobile */
-* { -webkit-tap-highlight-color: transparent; }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.fade-up { animation: fadeUp 0.6s ease forwards; }
-.delay-1 { animation-delay: 0.1s; opacity: 0; }
-.delay-2 { animation-delay: 0.2s; opacity: 0; }
-.delay-3 { animation-delay: 0.35s; opacity: 0; }
-.delay-4 { animation-delay: 0.5s; opacity: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #fff; }
 
 @keyframes pulseGreen {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.4); }
-  50%       { box-shadow: 0 0 0 10px rgba(37, 211, 102, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(37,211,102,0.35); }
+  60%       { box-shadow: 0 0 0 8px rgba(37,211,102,0); }
 }
-.pulse-green { animation: pulseGreen 2s infinite; }
+a[href*="wa.me"] { animation: pulseGreen 2.5s infinite; }
