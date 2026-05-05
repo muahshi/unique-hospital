@@ -137,7 +137,8 @@ function MiniQR({ text }: { text: string }) {
   const hash = text.split("").reduce((a,c) => ((a<<5)-a)+c.charCodeAt(0),0) >>> 0;
   const cells: boolean[][] = Array.from({length:9},(_,r)=>Array.from({length:9},(_,c)=>{
     const bit = (hash >> ((r*9+c)%32)) & 1;
-    return !!(bit ^ (r<3&&c<3) ^ (r<3&&c>5) ^ (r>5&&c<3));
+    const corner = (r<3&&c<3)||(r<3&&c>5)||(r>5&&c<3) ? 1 : 0;
+    return !!((bit ^ corner) & 1);
   }));
   return (
     <svg width="64" height="64" viewBox="0 0 9 9" style={{border:"2px solid #0A5C96",borderRadius:4,background:"#fff"}}>
