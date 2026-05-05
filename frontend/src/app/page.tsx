@@ -337,7 +337,7 @@ export default function Home() {
             </button>
           </div>
           <div style={{width:140,flexShrink:0,alignSelf:"stretch",position:"relative",overflow:"hidden"}}>
-            <img src="/hero_doctor.png" alt="Doctor" style={{position:"absolute",bottom:0,right:0,height:"100%",width:"auto",objectFit:"cover",objectPosition:"top center"}} onError={(e)=>{(e.target as HTMLImageElement).style.display="none";}}/>
+            <img src="/hero_doctor.webp" alt="Doctor" style={{position:"absolute",bottom:0,right:0,height:"100%",width:"auto",objectFit:"cover",objectPosition:"top center"}} onError={(e)=>{(e.target as HTMLImageElement).style.display="none";}}/>
           </div>
         </div>
       </section>
