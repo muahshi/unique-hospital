@@ -365,3 +365,209 @@ async def get_appointments(status: Optional[str]=None, limit: int=50):
     if status: q = q.eq("status", status)
     r = q.execute()
     return {"appointments":r.data,"count":len(r.data)}
+
+
+# ─── ADMIN ROUTES ─────────────────────────────────────────────────────────────
+
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "hospital@2024")
+
+def verify_admin(request: Request) -> bool:
+    token = request.headers.get("X-Admin-Token", "")
+    return token == ADMIN_PASSWORD
+
+class StatusUpdate(BaseModel):
+    appointment_id: str
+    status: str  # Pending / Confirmed / Attended / Cancelled / Emergency
+
+class AdminLogin(BaseModel):
+    password: str
+
+@app.post("/api/admin/login")
+async def admin_login(payload: AdminLogin):
+    if payload.password == ADMIN_PASSWORD:
+        return {"success": True, "token": ADMIN_PASSWORD}
+    raise HTTPException(status_code=401, detail="Wrong password")
+
+@app.get("/api/admin/appointments")
+async def admin_get_appointments(
+    request: Request,
+    status: Optional[str] = None,
+    date: Optional[str] = None,
+    dept: Optional[str] = None,
+    limit: int = 100
+):
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Try Supabase first
+    if supabase:
+        try:
+            q = supabase.table("appointments").select("*").order("created_at", desc=True).limit(limit)
+            if status: q = q.eq("status", status)
+            if date:   q = q.eq("preferred_date", date)
+            if dept:   q = q.eq("department", dept)
+            r = q.execute()
+            appts = r.data or []
+        except Exception as e:
+            logger.error(f"Supabase fetch error: {e}")
+            appts = []
+    else:
+        appts = []
+
+    # Fallback: Google Sheets
+    if not appts and gsheet_ws:
+        try:
+            rows = gsheet_ws.get_all_records()
+            appts = []
+            for row in rows:
+                if not row.get("Patient_Name"): continue
+                a = {
+                    "id": row.get("Unique_ID",""),
+                    "patient_name": row.get("Patient_Name",""),
+                    "phone": row.get("Phone",""),
+                    "email": row.get("Email",""),
+                    "department": row.get("Department",""),
+                    "preferred_date": row.get("Appointment_Date",""),
+                    "preferred_time": row.get("Appointment_Time",""),
+                    "status": row.get("Status","Pending"),
+                    "symptoms": row.get("Symptoms",""),
+                    "created_at": row.get("Timestamp",""),
+                }
+                if status and a["status"] != status: continue
+                if date and a["preferred_date"] != date: continue
+                if dept and a["department"] != dept: continue
+                appts.append(a)
+            appts.reverse()
+        except Exception as e:
+            logger.error(f"GSheet fetch error: {e}")
+
+    # Stats
+    today = datetime.now().strftime("%d-%m-%Y")
+    stats = {
+        "total": len(appts),
+        "today": sum(1 for a in appts if a.get("preferred_date") == today),
+        "pending": sum(1 for a in appts if a.get("status") == "Pending"),
+        "confirmed": sum(1 for a in appts if a.get("status") == "Confirmed"),
+        "attended": sum(1 for a in appts if a.get("status") == "Attended"),
+        "emergency": sum(1 for a in appts if a.get("status") == "Emergency"),
+        "cancelled": sum(1 for a in appts if a.get("status") == "Cancelled"),
+    }
+    return {"appointments": appts, "stats": stats}
+
+@app.get("/api/admin/appointment/{appt_id}")
+async def get_single_appointment(appt_id: str, request: Request):
+    """QR scan pe yeh route call hoga — single appointment details."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Supabase se dhundho
+    if supabase:
+        try:
+            r = supabase.table("appointments").select("*").eq("id", appt_id).execute()
+            if r.data: return {"appointment": r.data[0]}
+        except: pass
+
+    # Google Sheet se dhundho
+    if gsheet_ws:
+        try:
+            rows = gsheet_ws.get_all_records()
+            for row in rows:
+                if row.get("Unique_ID","").upper() == appt_id.upper():
+                    return {"appointment": {
+                        "id": row.get("Unique_ID",""),
+                        "patient_name": row.get("Patient_Name",""),
+                        "phone": row.get("Phone",""),
+                        "email": row.get("Email",""),
+                        "department": row.get("Department",""),
+                        "preferred_date": row.get("Appointment_Date",""),
+                        "preferred_time": row.get("Appointment_Time",""),
+                        "status": row.get("Status","Pending"),
+                        "symptoms": row.get("Symptoms",""),
+                        "created_at": row.get("Timestamp",""),
+                    }}
+        except: pass
+
+    raise HTTPException(status_code=404, detail="Appointment not found")
+
+@app.post("/api/admin/status")
+async def update_status(payload: StatusUpdate, request: Request):
+    """Status update karo — Supabase + Google Sheet dono mein."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    VALID = ["Pending","Confirmed","Attended","Cancelled","Emergency"]
+    if payload.status not in VALID:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {VALID}")
+
+    updated = False
+
+    # Supabase update
+    if supabase:
+        try:
+            supabase.table("appointments")\
+                .update({"status": payload.status})\
+                .eq("id", payload.appointment_id)\
+                .execute()
+            updated = True
+        except Exception as e:
+            logger.error(f"Supabase status update error: {e}")
+
+    # Google Sheet update
+    if gsheet_ws:
+        try:
+            rows = gsheet_ws.get_all_records()
+            for i, row in enumerate(rows):
+                uid = row.get("Unique_ID","")
+                # Match full ID or short 8-char prefix
+                if uid == payload.appointment_id or uid.upper()[:8] == payload.appointment_id.upper()[:8]:
+                    # Row index is i+2 (1-indexed + header row)
+                    # Status is column 9 (I)
+                    gsheet_ws.update_cell(i + 2, 9, payload.status)
+                    updated = True
+                    break
+        except Exception as e:
+            logger.error(f"GSheet status update error: {e}")
+
+    if not updated:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+
+    return {"success": True, "appointment_id": payload.appointment_id, "new_status": payload.status}
+
+@app.get("/api/admin/stats")
+async def admin_stats(request: Request):
+    """Dashboard ke liye summary stats."""
+    if not verify_admin(request):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    today = datetime.now().strftime("%d-%m-%Y")
+    dept_counts: dict = {}
+    hour_counts: dict = {}
+
+    if supabase:
+        try:
+            r = supabase.table("appointments").select("*").execute()
+            appts = r.data or []
+            today_appts = [a for a in appts if a.get("preferred_date") == today]
+
+            for a in appts:
+                d = a.get("department","Other")
+                dept_counts[d] = dept_counts.get(d, 0) + 1
+
+            for a in today_appts:
+                t = a.get("preferred_time","")
+                hour_counts[t] = hour_counts.get(t, 0) + 1
+
+            return {
+                "today": len(today_appts),
+                "total": len(appts),
+                "by_status": {
+                    s: sum(1 for a in appts if a.get("status") == s)
+                    for s in ["Pending","Confirmed","Attended","Cancelled","Emergency"]
+                },
+                "by_department": dept_counts,
+                "today_by_time": hour_counts,
+            }
+        except Exception as e:
+            logger.error(f"Stats error: {e}")
+
+    return {"today": 0, "total": 0, "by_status": {}, "by_department": {}, "today_by_time": {}}
