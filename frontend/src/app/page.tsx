@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const PHONE    = "919575877759";
@@ -153,14 +153,18 @@ function AppointmentCard({ appt, t }: { appt: SavedAppointment; t: typeof dict.e
   async function downloadCard() {
     if (!cardRef.current) return;
     try {
-      const { default: html2canvas } = await import("html2canvas" as any);
-      const canvas = await html2canvas(cardRef.current, { scale: 2, backgroundColor: null });
+      // Dynamically load html2canvas only on client
+      if (typeof window === "undefined") return;
+      // @ts-ignore
+      const h2c = (await import("html2canvas")).default;
+      const canvas = await h2c(cardRef.current, { scale: 2, useCORS: true, backgroundColor: "#0A5C96" });
       const a = document.createElement("a");
       a.href = canvas.toDataURL("image/png");
       a.download = `UH_Appointment_${appt.id}.png`;
       a.click();
-    } catch {
-      alert("Download ke liye browser mein try karein.");
+    } catch (e) {
+      // Fallback: copy booking ID
+      try { navigator.clipboard.writeText(`Unique Hospital\nPatient: ${appt.name}\nDept: ${appt.department}\nDate: ${appt.dateLabel}\nTime: ${appt.time}\nID: ${appt.id}`); alert("Details clipboard mein copy ho gayi!"); } catch {}
     }
   }
 
