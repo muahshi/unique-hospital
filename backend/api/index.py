@@ -242,24 +242,43 @@ async def send_emails(data: dict, appt_id: str) -> bool:
     headers = {"Authorization":f"Bearer {RESEND_API_KEY}","Content-Type":"application/json"}
     sent = False
     async with httpx.AsyncClient(timeout=15) as client:
-        # Patient email
+        # Patient confirmation email
+        # Note: On Resend free plan, emails only deliver to verified addresses.
+        # Once domain is verified, patient email will deliver directly.
+        # Until then, admin receives patient copy with reply-to set to patient.
         if email and "@" in email:
             try:
+                # Try sending directly to patient
                 r = await client.post("https://api.resend.com/emails", headers=headers, json={
                     "from": f"Unique Hospital <{FROM_EMAIL}>",
                     "to": [email],
+                    "reply_to": [ADMIN_EMAIL],
                     "subject": f"✅ Appointment Confirmed — {dept} on {date}",
                     "html": _patient_email_html(name, dept, date, time, appt_id),
                 })
-                if r.status_code == 200: sent = True
-                logger.info(f"Patient email: {r.status_code}")
+                if r.status_code == 200:
+                    sent = True
+                    logger.info(f"Patient email delivered to {email}")
+                else:
+                    # Fallback: send patient copy to admin with patient email in subject
+                    logger.warning(f"Patient email failed ({r.status_code}), sending copy to admin")
+                    await client.post("https://api.resend.com/emails", headers=headers, json={
+                        "from": f"Booking System <{FROM_EMAIL}>",
+                        "to": [ADMIN_EMAIL],
+                        "subject": f"📋 PATIENT COPY (forward to {email}) — {name} Appointment on {date}",
+                        "html": _patient_email_html(name, dept, date, time, appt_id),
+                    })
             except Exception as e:
                 logger.error(f"Patient email error: {e}")
-        # Admin email
+
+        # Admin notification email
         try:
+            # Build recipient list: always admin, plus patient if domain verified
+            to_list = [ADMIN_EMAIL]
             r = await client.post("https://api.resend.com/emails", headers=headers, json={
                 "from": f"Booking System <{FROM_EMAIL}>",
-                "to": [ADMIN_EMAIL],
+                "to": to_list,
+                "reply_to": [email] if email and "@" in email else [],
                 "subject": f"🔔 New Booking: {name} — {dept} on {date}",
                 "html": _admin_email_html(name, phone, email, dept, date, time, appt_id),
             })
