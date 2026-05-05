@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Unique Hospital — Admin Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #0A5C96; --blue2: #1a7bc4; --red: #dc2626;
+    --green: #16a34a; --yellow: #d97706; --purple: #7c3aed;
+    --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
+    --text: #1a2e44; --muted: #64748b;
+  }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* LOGIN */
+  #loginScreen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
+  .loginCard { background:#fff; border-radius:20px; padding:36px 28px; width:100%; max-width:380px; box-shadow:0 8px 32px rgba(0,0,0,0.1); text-align:center; }
+  .loginCard .logo { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,#0A5C96,#1a7bc4); color:#fff; font-size:18px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px; }
+  .loginCard h2 { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .loginCard p { color:#64748b; font-size:13px; margin-bottom:24px; }
+  .loginCard input { width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; font-size:14px; outline:none; margin-bottom:12px; }
+  .loginCard input:focus { border-color:#0A5C96; }
+  .loginCard button { width:100%; background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; }
+  .loginCard .err { color:#dc2626; font-size:13px; margin-top:8px; }
+
+  /* LAYOUT */
+  #dashboard { display:none; flex-direction:column; min-height:100vh; }
+  .topbar { background:linear-gradient(135deg,#0A5C96,#1a7bc4); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .topbar .brand { display:flex; align-items:center; gap:10px; }
+  .topbar .logo { width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,0.2); color:#fff; font-weight:900; font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .topbar h1 { color:#fff; font-size:16px; font-weight:800; }
+  .topbar .sub { color:rgba(255,255,255,0.7); font-size:11px; }
+  .topbar .actions { display:flex; gap:8px; align-items:center; }
+  .topbar .dateLabel { color:rgba(255,255,255,0.8); font-size:12px; }
+  .topbar .logoutBtn { background:rgba(255,255,255,0.15); border:none; color:#fff; padding:7px 14px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; }
+
+  /* TABS */
+  .tabs { display:flex; gap:0; background:#fff; border-bottom:2px solid #e2e8f0; overflow-x:auto; }
+  .tab { padding:12px 18px; font-size:13px; font-weight:600; color:#64748b; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
+  .tab.active { color:#0A5C96; border-bottom-color:#0A5C96; }
+
+  /* CONTENT */
+  .content { padding:16px; max-width:900px; margin:0 auto; width:100%; }
+
+  /* STATS CARDS */
+  .statsGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  .statCard { background:#fff; border-radius:14px; padding:14px; border:1px solid #e2e8f0; }
+  .statCard .val { font-size:26px; font-weight:900; }
+  .statCard .lbl { font-size:11px; color:#64748b; margin-top:2px; }
+  .statCard.blue .val { color:#0A5C96; }
+  .statCard.green .val { color:#16a34a; }
+  .statCard.red .val { color:#dc2626; }
+  .statCard.yellow .val { color:#d97706; }
+  .statCard.purple .val { color:#7c3aed; }
+
+  /* FILTERS */
+  .filters { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
+  .filterBtn { padding:7px 14px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid #e2e8f0; background:#fff; color:#64748b; }
+  .filterBtn.active { background:#0A5C96; color:#fff; border-color:#0A5C96; }
+  .searchBox { flex:1; min-width:160px; border:1.5px solid #e2e8f0; border-radius:100px; padding:7px 14px; font-size:13px; outline:none; }
+  .searchBox:focus { border-color:#0A5C96; }
+
+  /* TABLE */
+  .tableWrap { background:#fff; border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { background:#f8fafc; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid #e2e8f0; }
+  tbody tr { border-bottom:1px solid #f1f5f9; transition:background 0.1s; cursor:pointer; }
+  tbody tr:hover { background:#f8fafc; }
+  tbody tr.emergency { background:#fef2f2; }
+  tbody tr.emergency:hover { background:#fee2e2; }
+  tbody td { padding:12px 14px; font-size:13px; }
+  .patientName { font-weight:700; color:#1a2e44; }
+  .phone { color:#0A5C96; font-size:12px; }
+  .dept { font-size:12px; color:#64748b; }
+  .datetime { font-size:12px; }
+
+  /* STATUS BADGES */
+  .badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; }
+  .badge.Pending   { background:#fef3c7; color:#92400e; }
+  .badge.Confirmed { background:#d1fae5; color:#065f46; }
+  .badge.Attended  { background:#dbeafe; color:#1e40af; }
+  .badge.Cancelled { background:#f1f5f9; color:#64748b; }
+  .badge.Emergency { background:#fef2f2; color:#dc2626; animation:pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+  /* MODAL */
+  .modalOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:flex-end; justify-content:center; }
+  .modalOverlay.open { display:flex; }
+  .modal { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; padding:28px 24px 40px; animation:slideUp 0.3s ease; }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .modal h3 { font-size:18px; font-weight:800; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; }
+  .modal .closeBtn { background:none; border:none; font-size:22px; cursor:pointer; color:#64748b; }
+  .detailRow { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9; }
+  .detailRow:last-child { border:none; }
+  .detailKey { font-size:13px; color:#64748b; }
+  .detailVal { font-size:13px; font-weight:700; color:#1a2e44; text-align:right; }
+  .statusBtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px; }
+  .statusBtn { padding:12px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; border:2px solid; }
+  .statusBtn.Pending   { border-color:#d97706; color:#d97706; background:#fffbeb; }
+  .statusBtn.Confirmed { border-color:#16a34a; color:#16a34a; background:#f0fdf4; }
+  .statusBtn.Attended  { border-color:#1e40af; color:#1e40af; background:#eff6ff; }
+  .statusBtn.Cancelled { border-color:#64748b; color:#64748b; background:#f8fafc; }
+  .statusBtn.active    { color:#fff !important; }
+  .statusBtn.active.Pending   { background:#d97706; }
+  .statusBtn.active.Confirmed { background:#16a34a; }
+  .statusBtn.active.Attended  { background:#1e40af; }
+  .statusBtn.active.Cancelled { background:#64748b; }
+  .updateBtn { width:100%; margin-top:12px; background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; }
+
+  /* QR SCANNER TAB */
+  .qrSection { text-align:center; padding:24px 0; }
+  .qrSection h3 { font-size:18px; font-weight:800; margin-bottom:8px; }
+  .qrSection p { color:#64748b; font-size:13px; margin-bottom:24px; }
+  #qrVideo { width:100%; max-width:340px; border-radius:16px; border:3px solid #0A5C96; display:none; }
+  #qrCanvas { display:none; }
+  .qrBtn { background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px 28px; font-size:14px; font-weight:700; cursor:pointer; margin:8px; }
+  .qrBtn.secondary { background:#f1f5f9; color:#0A5C96; border:2px solid #0A5C96; }
+  .manualSearch { display:flex; gap:8px; margin-top:20px; max-width:360px; margin-left:auto; margin-right:auto; }
+  .manualSearch input { flex:1; border:1.5px solid #e2e8f0; border-radius:100px; padding:11px 16px; font-size:14px; outline:none; }
+  .manualSearch input:focus { border-color:#0A5C96; }
+  .manualSearch button { background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:11px 20px; font-size:13px; font-weight:700; cursor:pointer; }
+  .qrResult { background:#f0f9ff; border:1px solid #bae6fd; border-radius:16px; padding:20px; margin-top:20px; text-align:left; display:none; }
+  .qrResult.show { display:block; }
+
+  /* EMPTY STATE */
+  .empty { text-align:center; padding:48px 20px; color:#94a3b8; }
+  .empty .icon { font-size:48px; margin-bottom:12px; }
+
+  /* LOADING */
+  .loading { text-align:center; padding:40px; color:#64748b; }
+  .spinner { width:32px; height:32px; border:3px solid #e2e8f0; border-top-color:#0A5C96; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* TOAST */
+  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a2e44; color:#fff; padding:12px 24px; border-radius:100px; font-size:13px; font-weight:600; z-index:9999; display:none; }
+  #toast.show { display:block; animation:fadeIn 0.3s; }
+  @keyframes fadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+  @media(max-width:500px) {
+    .statsGrid { grid-template-columns:1fr 1fr; }
+    thead th:nth-child(4), tbody td:nth-child(4) { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="loginCard">
+    <div class="logo">UH</div>
+    <h2>Admin Dashboard</h2>
+    <p>Unique Hospital, Bhopal</p>
+    <input type="password" id="passInput" placeholder="Password dalein..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button onclick="doLogin()">Login →</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">UH</div>
+      <div>
+        <div style="color:#fff;font-weight:800;font-size:15px;">Unique Hospital</div>
+        <div class="sub">Admin Dashboard</div>
+      </div>
+    </div>
+    <div class="actions">
+      <span class="dateLabel" id="todayLabel"></span>
+      <button class="logoutBtn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('appointments')">📋 Appointments</div>
+    <div class="tab" onclick="switchTab('scanner')">📷 QR Scanner</div>
+    <div class="tab" onclick="switchTab('analytics')">📊 Analytics</div>
+  </div>
+
+  <!-- APPOINTMENTS TAB -->
+  <div id="tab-appointments" class="content">
+    <!-- Stats -->
+    <div class="statsGrid" id="statsGrid">
+      <div class="statCard blue"><div class="val" id="st-today">—</div><div class="lbl">Aaj ke</div></div>
+      <div class="statCard yellow"><div class="val" id="st-pending">—</div><div class="lbl">Pending</div></div>
+      <div class="statCard green"><div class="val" id="st-confirmed">—</div><div class="lbl">Confirmed</div></div>
+      <div class="statCard blue"><div class="val" id="st-attended">—</div><div class="lbl">Attended</div></div>
+      <div class="statCard purple"><div class="val" id="st-total">—</div><div class="lbl">Total</div></div>
+      <div class="statCard red"><div class="val" id="st-emergency">—</div><div class="lbl">Emergency</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input class="searchBox" id="searchBox" placeholder="🔍 Naam ya phone dhundho..." oninput="filterTable()"/>
+      <button class="filterBtn active" onclick="setFilter('All')">All</button>
+      <button class="filterBtn" onclick="setFilter('Pending')">Pending</button>
+      <button class="filterBtn" onclick="setFilter('Confirmed')">Confirmed</button>
+      <button class="filterBtn" onclick="setFilter('Attended')">Attended</button>
+      <button class="filterBtn" onclick="setFilter('Emergency')">🚨 Emergency</button>
+    </div>
+
+    <!-- Table -->
+    <div class="tableWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Patient</th>
+            <th>Department</th>
+            <th>Date & Time</th>
+            <th>ID</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="apptTable">
+          <tr><td colspan="5"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- QR SCANNER TAB -->
+  <div id="tab-scanner" class="content" style="display:none;">
+    <div class="qrSection">
+      <h3>📷 QR Code Scanner</h3>
+      <p>Patient ka appointment card scan karo ya Booking ID manually daalo</p>
+      <video id="qrVideo" autoplay playsinline></video>
+      <canvas id="qrCanvas"></canvas>
+      <br/>
+      <button class="qrBtn" id="startScanBtn" onclick="startCamera()">📷 Camera Kholein</button>
+      <button class="qrBtn secondary" id="stopScanBtn" style="display:none;" onclick="stopCamera()">⏹ Band Karein</button>
+
+      <div class="manualSearch">
+        <input id="manualId" placeholder="Booking ID likhein (e.g. UH042207)" onkeydown="if(event.key==='Enter')manualLookup()"/>
+        <button onclick="manualLookup()">Dhundho</button>
+      </div>
+
+      <div class="qrResult" id="qrResult"></div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS TAB -->
+  <div id="tab-analytics" class="content" style="display:none;">
+    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px;margin-bottom:16px;">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;">🏥 Department-wise Appointments</h3>
+      <div id="deptChart"></div>
+    </div>
+    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px;">
+      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;">⏰ Aaj Time-wise Appointments</h3>
+      <div id="timeChart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APPOINTMENT DETAIL MODAL -->
+<div class="modalOverlay" id="apptModal">
+  <div class="modal">
+    <h3>Appointment Details <button class="closeBtn" onclick="closeModal()">✕</button></h3>
+    <div id="modalContent"></div>
+    <div class="statusBtns" id="statusBtns"></div>
+    <button class="updateBtn" onclick="saveStatus()">✅ Status Update Karo</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const API = window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : '';  // Same origin on Vercel
+
+let TOKEN = '';
+let allAppointments = [];
+let currentFilter = 'All';
+let selectedApptId = '';
+let selectedStatus = '';
+let scanInterval = null;
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pass = document.getElementById('passInput').value.trim();
+  if (!pass) return;
+  try {
+    const r = await fetch(`${API}/api/admin/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pass })
+    });
+    if (r.ok) {
+      const d = await r.json();
+      TOKEN = d.token;
+      localStorage.setItem('uh_admin_token', TOKEN);
+      showDashboard();
+    } else {
+      document.getElementById('loginErr').textContent = '❌ Wrong password. Try again.';
+    }
+  } catch {
+    document.getElementById('loginErr').textContent = '❌ Server se connect nahi ho saka.';
+  }
+}
+
+function logout() {
+  TOKEN = '';
+  localStorage.removeItem('uh_admin_token');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+// Auto-login if token saved
+window.onload = () => {
+  const saved = localStorage.getItem('uh_admin_token');
+  if (saved) { TOKEN = saved; showDashboard(); }
+
+  const now = new Date();
+  document.getElementById('todayLabel').textContent =
+    now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
+};
+
+function showDashboard() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'flex';
+  loadAppointments();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  ['appointments','scanner','analytics'].forEach(t => {
+    document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('active', ['appointments','scanner','analytics'][i] === name);
+  });
+  if (name === 'analytics') renderCharts();
+}
+
+// ── Load Appointments ─────────────────────────────────────────────────────────
+async function loadAppointments() {
+  try {
+    const r = await fetch(`${API}/api/admin/appointments?limit=200`, {
+      headers: { 'X-Admin-Token': TOKEN }
+    });
+    if (r.status === 401) { logout(); return; }
+    const d = await r.json();
+    allAppointments = d.appointments || [];
+    updateStats(d.stats || {});
+    renderTable(allAppointments);
+  } catch (e) {
+    document.getElementById('apptTable').innerHTML =
+      '<tr><td colspan="5"><div class="empty"><div class="icon">⚠️</div>Server se data nahi aaya. Refresh karo.</div></td></tr>';
+  }
+}
+
+function updateStats(s) {
+  const today = new Date().toLocaleDateString('en-GB').split('/').join('-');
+  document.getElementById('st-today').textContent     = s.today ?? allAppointments.filter(a => a.preferred_date === todayStr()).length;
+  document.getElementById('st-pending').textContent   = s.pending ?? 0;
+  document.getElementById('st-confirmed').textContent = s.confirmed ?? 0;
+  document.getElementById('st-attended').textContent  = s.attended ?? 0;
+  document.getElementById('st-total').textContent     = s.total ?? allAppointments.length;
+  document.getElementById('st-emergency').textContent = s.emergency ?? 0;
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
+}
+
+// ── Render Table ──────────────────────────────────────────────────────────────
+function renderTable(data) {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const filtered = data.filter(a => {
+    const matchFilter = currentFilter === 'All' || a.status === currentFilter;
+    const matchSearch = !q ||
+      (a.patient_name||'').toLowerCase().includes(q) ||
+      (a.phone||'').includes(q) ||
+      (a.id||'').toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+
+  if (!filtered.length) {
+    document.getElementById('apptTable').innerHTML =
+      '<tr><td colspan="5"><div class="empty"><div class="icon">📭</div>Koi appointment nahi mili.</div></td></tr>';
+    return;
+  }
+
+  document.getElementById('apptTable').innerHTML = filtered.map(a => `
+    <tr class="${a.status === 'Emergency' ? 'emergency' : ''}" onclick="openModal('${a.id}')">
+      <td>
+        <div class="patientName">${a.patient_name || '—'}</div>
+        <div class="phone">📞 ${a.phone || '—'}</div>
+      </td>
+      <td><div class="dept">${a.department || '—'}</div></td>
+      <td><div class="datetime">${a.preferred_date || ''}<br/><strong>${a.preferred_time || ''}</strong></div></td>
+      <td><code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${(a.id||'').substring(0,8).toUpperCase()}</code></td>
+      <td><span class="badge ${a.status}">${a.status || 'Pending'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderTable(allAppointments);
+}
+
+function filterTable() { renderTable(allAppointments); }
+
+// ── Appointment Modal ─────────────────────────────────────────────────────────
+function openModal(id) {
+  const a = allAppointments.find(x => x.id === id);
+  if (!a) return;
+  selectedApptId = id;
+  selectedStatus = a.status || 'Pending';
+
+  document.getElementById('modalContent').innerHTML = `
+    <div class="detailRow"><span class="detailKey">👤 Patient</span><span class="detailVal">${a.patient_name||'—'}</span></div>
+    <div class="detailRow"><span class="detailKey">📞 Phone</span><span class="detailVal"><a href="tel:+91${a.phone}" style="color:#0A5C96;">+91 ${a.phone||'—'}</a></span></div>
+    <div class="detailRow"><span class="detailKey">📧 Email</span><span class="detailVal">${a.email||'—'}</span></div>
+    <div class="detailRow"><span class="detailKey">🏥 Department</span><span class="detailVal">${a.department||'—'}</span></div>
+    <div class="detailRow"><span class="detailKey">📅 Date</span><span class="detailVal">${a.preferred_date||'—'}</span></div>
+    <div class="detailRow"><span class="detailKey">⏰ Time</span><span class="detailVal">${a.preferred_time||'—'}</span></div>
+    <div class="detailRow"><span class="detailKey">🩺 Symptoms</span><span class="detailVal">${a.symptoms||'None'}</span></div>
+    <div class="detailRow"><span class="detailKey">🔖 Booking ID</span><span class="detailVal" style="font-family:monospace;">${(a.id||'').substring(0,8).toUpperCase()}</span></div>
+    <div class="detailRow"><span class="detailKey">📊 Current Status</span><span class="detailVal"><span class="badge ${a.status}">${a.status||'Pending'}</span></span></div>
+    ${a.symptoms && ['chest pain','bleeding','accident','heart attack'].some(k => (a.symptoms||'').toLowerCase().includes(k))
+      ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:13px;color:#dc2626;font-weight:600;">🚨 Emergency symptoms reported!</div>' : ''}
+  `;
+
+  renderStatusBtns(selectedStatus);
+  document.getElementById('apptModal').classList.add('open');
+}
+
+function renderStatusBtns(current) {
+  const statuses = ['Pending','Confirmed','Attended','Cancelled'];
+  document.getElementById('statusBtns').innerHTML = statuses.map(s => `
+    <button class="statusBtn ${s} ${s === current ? 'active' : ''}" onclick="selectStatus('${s}')">${
+      s === 'Pending' ? '⏳ Pending' :
+      s === 'Confirmed' ? '✅ Confirmed' :
+      s === 'Attended' ? '🏥 Attended' : '❌ Cancelled'
+    }</button>
+  `).join('');
+  selectedStatus = current;
+}
+
+function selectStatus(s) {
+  selectedStatus = s;
+  renderStatusBtns(s);
+}
+
+async function saveStatus() {
+  if (!selectedApptId) return;
+  try {
+    const r = await fetch(`${API}/api/admin/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
+      body: JSON.stringify({ appointment_id: selectedApptId, status: selectedStatus })
+    });
+    if (r.ok) {
+      // Update local data
+      const idx = allAppointments.findIndex(a => a.id === selectedApptId);
+      if (idx !== -1) allAppointments[idx].status = selectedStatus;
+      closeModal();
+      renderTable(allAppointments);
+      showToast(`✅ Status "${selectedStatus}" update ho gaya!`);
+      // Refresh stats
+      loadAppointments();
+    } else {
+      showToast('❌ Update fail hua. Dobara try karo.');
+    }
+  } catch {
+    showToast('❌ Network error.');
+  }
+}
+
+function closeModal() {
+  document.getElementById('apptModal').classList.remove('open');
+}
+
+// ── QR Scanner ────────────────────────────────────────────────────────────────
+let videoStream = null;
+
+async function startCamera() {
+  try {
+    const video = document.getElementById('qrVideo');
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = videoStream;
+    video.style.display = 'block';
+    document.getElementById('startScanBtn').style.display = 'none';
+    document.getElementById('stopScanBtn').style.display = 'inline-block';
+
+    // Load jsQR dynamically
+    if (!window.jsQR) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+      script.onload = startScanning;
+      document.head.appendChild(script);
+    } else {
+      startScanning();
+    }
+  } catch (e) {
+    showToast('❌ Camera access nahi mila. Permission dein.');
+  }
+}
+
+function startScanning() {
+  const video = document.getElementById('qrVideo');
+  const canvas = document.getElementById('qrCanvas');
+  const ctx = canvas.getContext('2d');
+
+  scanInterval = setInterval(() => {
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = window.jsQR && window.jsQR(img.data, img.width, img.height);
+      if (code && code.data) {
+        stopCamera();
+        lookupAppointment(code.data);
+      }
+    }
+  }, 300);
+}
+
+function stopCamera() {
+  clearInterval(scanInterval);
+  if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+  document.getElementById('qrVideo').style.display = 'none';
+  document.getElementById('startScanBtn').style.display = 'inline-block';
+  document.getElementById('stopScanBtn').style.display = 'none';
+}
+
+function manualLookup() {
+  const id = document.getElementById('manualId').value.trim();
+  if (!id) return;
+  lookupAppointment(id);
+}
+
+async function lookupAppointment(id) {
+  // First try local data
+  const local = allAppointments.find(a =>
+    a.id === id || (a.id||'').substring(0,8).toUpperCase() === id.toUpperCase()
+  );
+
+  let appt = local;
+
+  if (!appt) {
+    try {
+      const r = await fetch(`${API}/api/admin/appointment/${id}`, {
+        headers: { 'X-Admin-Token': TOKEN }
+      });
+      if (r.ok) { const d = await r.json(); appt = d.appointment; }
+    } catch {}
+  }
+
+  const resultDiv = document.getElementById('qrResult');
+  if (!appt) {
+    resultDiv.className = 'qrResult show';
+    resultDiv.innerHTML = `<div style="color:#dc2626;text-align:center;padding:16px;">❌ Appointment nahi mili: <strong>${id}</strong></div>`;
+    return;
+  }
+
+  resultDiv.className = 'qrResult show';
+  resultDiv.innerHTML = `
+    <h4 style="font-size:16px;font-weight:800;margin-bottom:14px;">✅ Patient Found</h4>
+    ${[['👤 Patient', appt.patient_name],['📞 Phone', `+91 ${appt.phone}`],
+       ['🏥 Department', appt.department],['📅 Date', appt.preferred_date],
+       ['⏰ Time', appt.preferred_time],['📊 Status', appt.status]].map(([k,v]) => `
+      <div class="detailRow"><span class="detailKey">${k}</span><span class="detailVal">${v||'—'}</span></div>
+    `).join('')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
+      <button onclick="quickStatus('${appt.id}','Confirmed')" style="padding:12px;background:#d1fae5;color:#065f46;border:2px solid #16a34a;border-radius:10px;font-weight:700;cursor:pointer;">✅ Confirm</button>
+      <button onclick="quickStatus('${appt.id}','Attended')" style="padding:12px;background:#dbeafe;color:#1e40af;border:2px solid #1e40af;border-radius:10px;font-weight:700;cursor:pointer;">🏥 Attended</button>
+    </div>
+  `;
+}
+
+async function quickStatus(id, status) {
+  try {
+    await fetch(`${API}/api/admin/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
+      body: JSON.stringify({ appointment_id: id, status })
+    });
+    showToast(`✅ Status "${status}" set ho gaya!`);
+    loadAppointments();
+    // Re-lookup to refresh result
+    setTimeout(() => lookupAppointment(id), 500);
+  } catch { showToast('❌ Update fail hua.'); }
+}
+
+// ── Analytics Charts ──────────────────────────────────────────────────────────
+function renderCharts() {
+  // Department chart
+  const deptCounts = {};
+  allAppointments.forEach(a => {
+    const d = a.department || 'Other';
+    deptCounts[d] = (deptCounts[d]||0) + 1;
+  });
+  const maxDept = Math.max(...Object.values(deptCounts), 1);
+  const colors = ['#0A5C96','#16a34a','#d97706','#7c3aed','#dc2626'];
+  document.getElementById('deptChart').innerHTML = Object.entries(deptCounts)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([dept, count], i) => `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span style="font-size:13px;font-weight:600;">${dept}</span>
+          <span style="font-size:13px;font-weight:800;color:${colors[i%5]};">${count}</span>
+        </div>
+        <div style="background:#f1f5f9;border-radius:100px;height:8px;">
+          <div style="background:${colors[i%5]};height:8px;border-radius:100px;width:${Math.round(count/maxDept*100)}%;transition:width 0.5s;"></div>
+        </div>
+      </div>
+    `).join('') || '<div style="color:#94a3b8;text-align:center;padding:20px;">No data</div>';
+
+  // Today time chart
+  const today = todayStr();
+  const timeCounts = {};
+  allAppointments.filter(a => a.preferred_date === today).forEach(a => {
+    const t = a.preferred_time || 'Unknown';
+    timeCounts[t] = (timeCounts[t]||0) + 1;
+  });
+  const maxTime = Math.max(...Object.values(timeCounts), 1);
+  document.getElementById('timeChart').innerHTML = Object.entries(timeCounts).length
+    ? Object.entries(timeCounts).map(([time, count]) => `
+        <div style="margin-bottom:12px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <span style="font-size:13px;font-weight:600;">${time}</span>
+            <span style="font-size:13px;font-weight:800;color:#0A5C96;">${count} patient${count>1?'s':''}</span>
+          </div>
+          <div style="background:#f1f5f9;border-radius:100px;height:8px;">
+            <div style="background:#0A5C96;height:8px;border-radius:100px;width:${Math.round(count/maxTime*100)}%;"></div>
+          </div>
+        </div>
+      `).join('')
+    : '<div style="color:#94a3b8;text-align:center;padding:20px;">Aaj koi appointment nahi</div>';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Auto-refresh every 60 seconds
+setInterval(() => { if (TOKEN) loadAppointments(); }, 60000);
+</script>
+</body>
+</html>
