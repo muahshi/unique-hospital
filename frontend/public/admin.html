@@ -1215,28 +1215,63 @@ function manualLookup() {
   lookupAppointment(id);
 }
 
-async function lookupAppointment(id) {
+async function lookupAppointment(rawId) {
   document.getElementById('qrPlaceholder').style.display = 'none';
   const resultDiv = document.getElementById('qrResult');
   resultDiv.className = 'qr-result show';
   resultDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><div class="spinner" style="margin:0 auto 8px"></div>Dhundh raha hoon...</div>';
 
-  const local = allAppointments.find(a =>
-    a.id === id || (a.id||'').substring(0,8).toUpperCase() === id.toUpperCase()
-  );
+  // Clean input — remove whitespace, handle URL-encoded values
+  let id = rawId.trim();
+  try { id = decodeURIComponent(id); } catch {}
+  id = id.split('|')[0].trim(); // QR mein sirf ID hai, extra data nahi
+
+  // Match: full UUID OR first 8 chars OR anywhere in UUID
+  const local = allAppointments.find(a => {
+    const fullId = (a.id || '').toLowerCase();
+    const shortId = fullId.substring(0, 8);
+    const searchId = id.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return fullId === searchId ||
+           shortId === searchId.substring(0, 8) ||
+           fullId.startsWith(searchId) ||
+           searchId.startsWith(shortId);
+  });
   let appt = local;
 
   if (!appt) {
     try {
-      const r = await fetch(`${API}/api/admin/appointment/${id}`, {
+      const r = await fetch(`${API}/api/admin/appointment/${encodeURIComponent(id)}`, {
         headers: { 'X-Admin-Token': TOKEN }
       });
       if (r.ok) appt = (await r.json()).appointment;
     } catch {}
   }
 
+  if (!appt && allAppointments.length === 0) {
+    // Data not loaded yet — try API directly
+    try {
+      await loadData();
+      const retry = allAppointments.find(a => {
+        const fullId = (a.id || '').toLowerCase();
+        const searchId = id.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return fullId.startsWith(searchId.substring(0,8)) || searchId.startsWith(fullId.substring(0,8));
+      });
+      if (retry) appt = retry;
+    } catch {}
+  }
+
   if (!appt) {
-    resultDiv.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);">❌ Appointment nahi mili: <strong>${id}</strong></div>`;
+    resultDiv.innerHTML = `
+      <div style="text-align:center;padding:20px;color:var(--red);">
+        <div style="font-size:32px;margin-bottom:8px;">❌</div>
+        <div style="font-weight:700;">Appointment nahi mili</div>
+        <div style="font-size:12px;color:var(--muted2);margin-top:4px;">ID: <code style="color:var(--cyan)">${id.substring(0,16)}</code></div>
+        <div style="font-size:11px;color:var(--muted2);margin-top:8px;">Total loaded: ${allAppointments.length} appointments</div>
+        <button onclick="loadData().then(()=>lookupAppointment('${id.replace(/'/g,"\'")}'))"
+          style="margin-top:12px;background:var(--blue);color:#fff;border:none;border-radius:100px;padding:8px 16px;font-size:12px;cursor:pointer;">
+          🔄 Reload & Retry
+        </button>
+      </div>`;
     return;
   }
 
