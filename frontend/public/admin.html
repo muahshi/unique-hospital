@@ -2,287 +2,787 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Unique Hospital — Admin Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  :root {
-    --blue: #0A5C96; --blue2: #1a7bc4; --red: #dc2626;
-    --green: #16a34a; --yellow: #d97706; --purple: #7c3aed;
-    --bg: #f1f5f9; --card: #fff; --border: #e2e8f0;
-    --text: #1a2e44; --muted: #64748b;
-  }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+/* ── Reset & Variables ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #0f1623;
+  --surface: #161e2e;
+  --card:    #1c2740;
+  --card2:   #1a2236;
+  --border:  #263352;
+  --blue:    #3b82f6;
+  --blue2:   #1d4ed8;
+  --cyan:    #06b6d4;
+  --green:   #22c55e;
+  --yellow:  #f59e0b;
+  --red:     #ef4444;
+  --purple:  #8b5cf6;
+  --text:    #e2e8f0;
+  --muted:   #64748b;
+  --muted2:  #94a3b8;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-  /* LOGIN */
-  #loginScreen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px; }
-  .loginCard { background:#fff; border-radius:20px; padding:36px 28px; width:100%; max-width:380px; box-shadow:0 8px 32px rgba(0,0,0,0.1); text-align:center; }
-  .loginCard .logo { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,#0A5C96,#1a7bc4); color:#fff; font-size:18px; font-weight:900; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px; }
-  .loginCard h2 { font-size:22px; font-weight:800; margin-bottom:4px; }
-  .loginCard p { color:#64748b; font-size:13px; margin-bottom:24px; }
-  .loginCard input { width:100%; border:1.5px solid #e2e8f0; border-radius:10px; padding:12px 14px; font-size:14px; outline:none; margin-bottom:12px; }
-  .loginCard input:focus { border-color:#0A5C96; }
-  .loginCard button { width:100%; background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px; font-size:15px; font-weight:700; cursor:pointer; }
-  .loginCard .err { color:#dc2626; font-size:13px; margin-top:8px; }
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-  /* LAYOUT */
-  #dashboard { display:none; flex-direction:column; min-height:100vh; }
-  .topbar { background:linear-gradient(135deg,#0A5C96,#1a7bc4); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
-  .topbar .brand { display:flex; align-items:center; gap:10px; }
-  .topbar .logo { width:34px; height:34px; border-radius:8px; background:rgba(255,255,255,0.2); color:#fff; font-weight:900; font-size:12px; display:flex; align-items:center; justify-content:center; }
-  .topbar h1 { color:#fff; font-size:16px; font-weight:800; }
-  .topbar .sub { color:rgba(255,255,255,0.7); font-size:11px; }
-  .topbar .actions { display:flex; gap:8px; align-items:center; }
-  .topbar .dateLabel { color:rgba(255,255,255,0.8); font-size:12px; }
-  .topbar .logoutBtn { background:rgba(255,255,255,0.15); border:none; color:#fff; padding:7px 14px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; }
+/* ── LOGIN ───────────────────────────────────────────────────────────────── */
+#loginScreen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.12) 0%, transparent 60%),
+              radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.08) 0%, transparent 50%),
+              var(--bg);
+}
+.loginCard {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 40px 32px; width: 100%; max-width: 360px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+}
+.loginLogo {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 16px; color: #fff; margin: 0 auto 20px;
+  box-shadow: 0 8px 24px rgba(59,130,246,0.35);
+}
+.loginCard h2 { font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 4px; }
+.loginCard p { color: var(--muted2); font-size: 13px; text-align: center; margin-bottom: 28px; }
+.loginCard input {
+  width: 100%; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--text);
+  outline: none; margin-bottom: 12px; transition: border-color 0.2s;
+}
+.loginCard input:focus { border-color: var(--blue); }
+.loginCard button {
+  width: 100%; background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #fff; border: none; border-radius: 100px; padding: 13px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+  transition: opacity 0.2s;
+}
+.loginCard button:hover { opacity: 0.9; }
+.loginErr { color: var(--red); font-size: 12px; text-align: center; margin-top: 8px; }
 
-  /* TABS */
-  .tabs { display:flex; gap:0; background:#fff; border-bottom:2px solid #e2e8f0; overflow-x:auto; }
-  .tab { padding:12px 18px; font-size:13px; font-weight:600; color:#64748b; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; white-space:nowrap; }
-  .tab.active { color:#0A5C96; border-bottom-color:#0A5C96; }
+/* ── LAYOUT ──────────────────────────────────────────────────────────────── */
+#dashboard { display: none; flex-direction: column; min-height: 100vh; }
 
-  /* CONTENT */
-  .content { padding:16px; max-width:900px; margin:0 auto; width:100%; }
+/* ── HEADER ──────────────────────────────────────────────────────────────── */
+.header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 200;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 13px; color: #fff;
+}
+.header-title { font-size: 15px; font-weight: 800; color: var(--text); }
+.header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.header-right { display: flex; align-items: center; gap: 14px; }
+.header-date { font-size: 13px; color: var(--muted2); }
+.logout-btn {
+  background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.3);
+  color: var(--red); padding: 7px 16px; border-radius: 100px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.logout-btn:hover { background: rgba(239,68,68,0.2); }
 
-  /* STATS CARDS */
-  .statsGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
-  .statCard { background:#fff; border-radius:14px; padding:14px; border:1px solid #e2e8f0; }
-  .statCard .val { font-size:26px; font-weight:900; }
-  .statCard .lbl { font-size:11px; color:#64748b; margin-top:2px; }
-  .statCard.blue .val { color:#0A5C96; }
-  .statCard.green .val { color:#16a34a; }
-  .statCard.red .val { color:#dc2626; }
-  .statCard.yellow .val { color:#d97706; }
-  .statCard.purple .val { color:#7c3aed; }
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+.nav {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 20px; display: flex; gap: 4px; overflow-x: auto;
+}
+.nav-tab {
+  display: flex; align-items: center; gap: 7px;
+  padding: 14px 18px; font-size: 13px; font-weight: 600;
+  color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; white-space: nowrap; transition: all 0.2s;
+}
+.nav-tab:hover { color: var(--text); }
+.nav-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+.nav-tab .tab-icon { font-size: 15px; }
 
-  /* FILTERS */
-  .filters { display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; }
-  .filterBtn { padding:7px 14px; border-radius:100px; font-size:12px; font-weight:600; cursor:pointer; border:1.5px solid #e2e8f0; background:#fff; color:#64748b; }
-  .filterBtn.active { background:#0A5C96; color:#fff; border-color:#0A5C96; }
-  .searchBox { flex:1; min-width:160px; border:1.5px solid #e2e8f0; border-radius:100px; padding:7px 14px; font-size:13px; outline:none; }
-  .searchBox:focus { border-color:#0A5C96; }
+/* ── CONTENT ─────────────────────────────────────────────────────────────── */
+.content { padding: 20px; }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
 
-  /* TABLE */
-  .tableWrap { background:#fff; border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; }
-  table { width:100%; border-collapse:collapse; }
-  thead th { background:#f8fafc; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid #e2e8f0; }
-  tbody tr { border-bottom:1px solid #f1f5f9; transition:background 0.1s; cursor:pointer; }
-  tbody tr:hover { background:#f8fafc; }
-  tbody tr.emergency { background:#fef2f2; }
-  tbody tr.emergency:hover { background:#fee2e2; }
-  tbody td { padding:12px 14px; font-size:13px; }
-  .patientName { font-weight:700; color:#1a2e44; }
-  .phone { color:#0A5C96; font-size:12px; }
-  .dept { font-size:12px; color:#64748b; }
-  .datetime { font-size:12px; }
+/* ── STAT CARDS ──────────────────────────────────────────────────────────── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 16px;
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0;
+  height: 2px; background: var(--accent, var(--blue));
+}
+.stat-val { font-size: 28px; font-weight: 900; color: var(--accent, var(--blue)); line-height: 1; margin-bottom: 4px; }
+.stat-lbl { font-size: 11px; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-card.green  { --accent: var(--green); }
+.stat-card.yellow { --accent: var(--yellow); }
+.stat-card.red    { --accent: var(--red); }
+.stat-card.purple { --accent: var(--purple); }
+.stat-card.cyan   { --accent: var(--cyan); }
 
-  /* STATUS BADGES */
-  .badge { display:inline-block; padding:3px 10px; border-radius:100px; font-size:11px; font-weight:700; }
-  .badge.Pending   { background:#fef3c7; color:#92400e; }
-  .badge.Confirmed { background:#d1fae5; color:#065f46; }
-  .badge.Attended  { background:#dbeafe; color:#1e40af; }
-  .badge.Cancelled { background:#f1f5f9; color:#64748b; }
-  .badge.Emergency { background:#fef2f2; color:#dc2626; animation:pulse 1.5s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+/* ── MAIN GRID ───────────────────────────────────────────────────────────── */
+.main-grid {
+  display: grid; grid-template-columns: 1fr 340px; gap: 16px;
+}
 
-  /* MODAL */
-  .modalOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:1000; align-items:flex-end; justify-content:center; }
-  .modalOverlay.open { display:flex; }
-  .modal { background:#fff; border-radius:24px 24px 0 0; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; padding:28px 24px 40px; animation:slideUp 0.3s ease; }
-  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
-  .modal h3 { font-size:18px; font-weight:800; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; }
-  .modal .closeBtn { background:none; border:none; font-size:22px; cursor:pointer; color:#64748b; }
-  .detailRow { display:flex; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f1f5f9; }
-  .detailRow:last-child { border:none; }
-  .detailKey { font-size:13px; color:#64748b; }
-  .detailVal { font-size:13px; font-weight:700; color:#1a2e44; text-align:right; }
-  .statusBtns { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px; }
-  .statusBtn { padding:12px; border-radius:12px; font-size:13px; font-weight:700; cursor:pointer; border:2px solid; }
-  .statusBtn.Pending   { border-color:#d97706; color:#d97706; background:#fffbeb; }
-  .statusBtn.Confirmed { border-color:#16a34a; color:#16a34a; background:#f0fdf4; }
-  .statusBtn.Attended  { border-color:#1e40af; color:#1e40af; background:#eff6ff; }
-  .statusBtn.Cancelled { border-color:#64748b; color:#64748b; background:#f8fafc; }
-  .statusBtn.active    { color:#fff !important; }
-  .statusBtn.active.Pending   { background:#d97706; }
-  .statusBtn.active.Confirmed { background:#16a34a; }
-  .statusBtn.active.Attended  { background:#1e40af; }
-  .statusBtn.active.Cancelled { background:#64748b; }
-  .updateBtn { width:100%; margin-top:12px; background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px; font-size:14px; font-weight:700; cursor:pointer; }
+/* ── SEARCH & FILTER ─────────────────────────────────────────────────────── */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; flex-wrap: wrap;
+}
+.search-input {
+  flex: 1; min-width: 200px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 100px; padding: 9px 16px 9px 36px;
+  font-size: 13px; color: var(--text); outline: none;
+  transition: border-color 0.2s; position: relative;
+}
+.search-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-wrap::before {
+  content: '🔍'; position: absolute; left: 12px; top: 50%;
+  transform: translateY(-50%); font-size: 13px; pointer-events: none;
+}
+.search-input:focus { border-color: var(--blue); }
+.filter-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-btn {
+  padding: 7px 16px; border-radius: 100px; font-size: 12px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid var(--border);
+  background: transparent; color: var(--muted2); transition: all 0.2s;
+}
+.filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+.filter-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+.refresh-btn {
+  background: rgba(59,130,246,0.1); border: 1.5px solid var(--border);
+  color: var(--blue); padding: 7px 14px; border-radius: 100px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+}
+.refresh-btn:hover { background: rgba(59,130,246,0.2); }
 
-  /* QR SCANNER TAB */
-  .qrSection { text-align:center; padding:24px 0; }
-  .qrSection h3 { font-size:18px; font-weight:800; margin-bottom:8px; }
-  .qrSection p { color:#64748b; font-size:13px; margin-bottom:24px; }
-  #qrVideo { width:100%; max-width:340px; border-radius:16px; border:3px solid #0A5C96; display:none; }
-  #qrCanvas { display:none; }
-  .qrBtn { background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:14px 28px; font-size:14px; font-weight:700; cursor:pointer; margin:8px; }
-  .qrBtn.secondary { background:#f1f5f9; color:#0A5C96; border:2px solid #0A5C96; }
-  .manualSearch { display:flex; gap:8px; margin-top:20px; max-width:360px; margin-left:auto; margin-right:auto; }
-  .manualSearch input { flex:1; border:1.5px solid #e2e8f0; border-radius:100px; padding:11px 16px; font-size:14px; outline:none; }
-  .manualSearch input:focus { border-color:#0A5C96; }
-  .manualSearch button { background:#0A5C96; color:#fff; border:none; border-radius:100px; padding:11px 20px; font-size:13px; font-weight:700; cursor:pointer; }
-  .qrResult { background:#f0f9ff; border:1px solid #bae6fd; border-radius:16px; padding:20px; margin-top:20px; text-align:left; display:none; }
-  .qrResult.show { display:block; }
+/* ── TABLE ───────────────────────────────────────────────────────────────── */
+.table-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; overflow: hidden;
+}
+.table-header {
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.table-header h3 { font-size: 14px; font-weight: 700; }
+.table-count { font-size: 12px; color: var(--muted2); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: 10px 16px; text-align: left;
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody tr {
+  border-bottom: 1px solid rgba(38,51,82,0.5);
+  cursor: pointer; transition: background 0.15s;
+}
+tbody tr:hover { background: rgba(59,130,246,0.05); }
+tbody tr.emergency-row { background: rgba(239,68,68,0.05); }
+tbody tr.emergency-row:hover { background: rgba(239,68,68,0.1); }
+tbody td { padding: 12px 16px; font-size: 13px; vertical-align: middle; }
+.patient-name { font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.patient-phone { font-size: 11px; color: var(--muted2); }
+.dept-badge {
+  display: inline-block; padding: 3px 8px; border-radius: 6px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(59,130,246,0.12); color: var(--blue);
+}
+.datetime-main { font-weight: 600; font-size: 13px; }
+.datetime-time { font-size: 11px; color: var(--muted2); }
+.booking-id {
+  font-family: 'Courier New', monospace; font-size: 11px;
+  background: var(--bg); color: var(--cyan);
+  padding: 2px 8px; border-radius: 6px; letter-spacing: 0.05em;
+}
 
-  /* EMPTY STATE */
-  .empty { text-align:center; padding:48px 20px; color:#94a3b8; }
-  .empty .icon { font-size:48px; margin-bottom:12px; }
+/* STATUS BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 10px; border-radius: 100px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.badge.Pending   { background: rgba(245,158,11,0.15); color: var(--yellow); }
+.badge.Confirmed { background: rgba(34,197,94,0.15);  color: var(--green); }
+.badge.Attended  { background: rgba(59,130,246,0.15); color: var(--blue); }
+.badge.Cancelled { background: rgba(100,116,139,0.15); color: var(--muted2); }
+.badge.Emergency { background: rgba(239,68,68,0.15);  color: var(--red); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
 
-  /* LOADING */
-  .loading { text-align:center; padding:40px; color:#64748b; }
-  .spinner { width:32px; height:32px; border:3px solid #e2e8f0; border-top-color:#0A5C96; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto 12px; }
-  @keyframes spin { to{transform:rotate(360deg)} }
+/* ACTION BUTTONS */
+.action-btns { display: flex; gap: 4px; }
+.act-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid; transition: all 0.15s;
+}
+.act-btn.confirm  { border-color: rgba(34,197,94,0.4);  color: var(--green);  background: rgba(34,197,94,0.08); }
+.act-btn.attended { border-color: rgba(59,130,246,0.4); color: var(--blue);   background: rgba(59,130,246,0.08); }
+.act-btn.cancel   { border-color: rgba(239,68,68,0.4);  color: var(--red);    background: rgba(239,68,68,0.08); }
+.act-btn:hover { filter: brightness(1.2); }
 
-  /* TOAST */
-  #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1a2e44; color:#fff; padding:12px 24px; border-radius:100px; font-size:13px; font-weight:600; z-index:9999; display:none; }
-  #toast.show { display:block; animation:fadeIn 0.3s; }
-  @keyframes fadeIn { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
+/* ── RIGHT PANEL (Charts) ─────────────────────────────────────────────────── */
+.right-panel { display: flex; flex-direction: column; gap: 14px; }
+.chart-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 18px;
+}
+.chart-card h4 {
+  font-size: 13px; font-weight: 700; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.chart-card h4 .chart-icon { font-size: 16px; }
+.chart-wrap { height: 160px; position: relative; }
 
-  @media(max-width:500px) {
-    .statsGrid { grid-template-columns:1fr 1fr; }
-    thead th:nth-child(4), tbody td:nth-child(4) { display:none; }
-  }
+/* ── ANALYTICS TAB ───────────────────────────────────────────────────────── */
+.analytics-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;
+}
+.analytics-grid .chart-card .chart-wrap { height: 200px; }
+.analytics-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* DEMOGRAPHICS CHART */
+.demo-wrap { height: 180px; }
+
+/* PATIENT FEEDBACK */
+.feedback-stars { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.stars { color: var(--yellow); font-size: 14px; }
+.star-bar { flex: 1; height: 6px; background: var(--border); border-radius: 100px; overflow: hidden; }
+.star-fill { height: 100%; background: linear-gradient(90deg, var(--yellow), var(--blue)); border-radius: 100px; }
+.recent-review { margin-top: 14px; padding: 12px; background: var(--bg); border-radius: 10px; }
+.recent-review .rv-label { font-size: 10px; color: var(--muted2); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+.recent-review p { font-size: 12px; color: var(--muted2); line-height: 1.6; font-style: italic; }
+
+/* STAFF TABLE */
+.staff-table { width: 100%; border-collapse: collapse; }
+.staff-table th {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); padding: 6px 8px; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.staff-table td { padding: 10px 8px; font-size: 12px; border-bottom: 1px solid rgba(38,51,82,0.4); }
+.staff-name { font-weight: 700; margin-bottom: 1px; }
+.staff-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--purple));
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800; color: #fff; margin-right: 8px;
+}
+
+/* REPORTS */
+.report-cards { display: flex; flex-direction: column; gap: 10px; }
+.report-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 12px; cursor: pointer; transition: all 0.2s;
+}
+.report-card:hover { border-color: var(--blue); background: rgba(59,130,246,0.05); }
+.report-icon {
+  width: 36px; height: 36px; border-radius: 10px; display: flex;
+  align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.report-icon.daily   { background: rgba(34,197,94,0.15); }
+.report-icon.weekly  { background: rgba(59,130,246,0.15); }
+.report-icon.monthly { background: rgba(139,92,246,0.15); }
+.report-label { font-size: 13px; font-weight: 600; }
+.report-sub   { font-size: 11px; color: var(--muted2); margin-top: 1px; }
+.report-arrow { margin-left: auto; color: var(--muted); font-size: 16px; }
+
+/* ── QR SCANNER TAB ──────────────────────────────────────────────────────── */
+.scanner-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.scanner-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px; text-align: center;
+}
+.scanner-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.scanner-card p { font-size: 13px; color: var(--muted2); margin-bottom: 20px; line-height: 1.6; }
+#qrVideo {
+  width: 100%; max-width: 280px; border-radius: 14px;
+  border: 2px solid var(--blue); display: none; margin: 0 auto;
+}
+#qrCanvas { display: none; }
+.scan-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #fff; border: none; border-radius: 100px; padding: 12px 24px;
+  font-size: 14px; font-weight: 700; cursor: pointer; margin: 6px;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.3); transition: all 0.2s;
+}
+.scan-btn:hover { transform: translateY(-1px); }
+.scan-btn.secondary {
+  background: transparent; border: 1.5px solid var(--blue); color: var(--blue);
+  box-shadow: none;
+}
+.manual-search { display: flex; gap: 8px; margin-top: 20px; }
+.manual-search input {
+  flex: 1; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 100px; padding: 10px 16px; font-size: 13px;
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.manual-search input:focus { border-color: var(--blue); }
+.manual-search button {
+  background: var(--blue); color: #fff; border: none; border-radius: 100px;
+  padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.qr-result {
+  display: none; margin-top: 16px; text-align: left;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 14px; padding: 16px;
+}
+.qr-result.show { display: block; }
+.qr-detail-row {
+  display: flex; justify-content: space-between; padding: 8px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.qr-detail-row:last-child { border: none; }
+.qr-key { color: var(--muted2); }
+.qr-val { font-weight: 700; }
+.quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.qa-btn {
+  padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid; transition: all 0.2s;
+}
+.qa-btn.confirm  { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.1); }
+.qa-btn.attended { border-color: var(--blue);  color: var(--blue);  background: rgba(59,130,246,0.1); }
+.qa-btn:hover { filter: brightness(1.2); }
+
+/* ── MODAL ───────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+  z-index: 1000; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; width: 100%; max-width: 460px;
+  max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  animation: popIn 0.25s ease;
+}
+@keyframes popIn { from{transform:scale(0.95);opacity:0} to{transform:scale(1);opacity:1} }
+.modal-header {
+  padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.modal-header h3 { font-size: 16px; font-weight: 800; }
+.modal-close { background: none; border: none; color: var(--muted2); font-size: 22px; cursor: pointer; }
+.modal-body { padding: 20px 24px; }
+.modal-row {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 10px 0; border-bottom: 1px solid rgba(38,51,82,0.5);
+}
+.modal-row:last-child { border: none; }
+.modal-key { font-size: 12px; color: var(--muted2); margin-top: 2px; }
+.modal-val { font-size: 13px; font-weight: 700; text-align: right; max-width: 60%; }
+.modal-footer { padding: 16px 24px 20px; border-top: 1px solid var(--border); }
+.status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.status-choice {
+  padding: 11px 12px; border-radius: 10px; font-size: 12px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid var(--border); background: transparent;
+  color: var(--muted2); text-align: center; transition: all 0.2s;
+}
+.status-choice.Pending.active   { border-color: var(--yellow); color: var(--yellow); background: rgba(245,158,11,0.1); }
+.status-choice.Confirmed.active { border-color: var(--green);  color: var(--green);  background: rgba(34,197,94,0.1); }
+.status-choice.Attended.active  { border-color: var(--blue);   color: var(--blue);   background: rgba(59,130,246,0.1); }
+.status-choice.Cancelled.active { border-color: var(--muted2); color: var(--muted2); background: rgba(100,116,139,0.1); }
+.update-btn {
+  width: 100%; background: linear-gradient(135deg, var(--blue), var(--blue2));
+  color: #fff; border: none; border-radius: 100px; padding: 13px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.3); transition: opacity 0.2s;
+}
+.update-btn:hover { opacity: 0.9; }
+
+/* ── TOAST ───────────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--text); padding: 12px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  display: none; align-items: center; gap: 8px;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from{transform:translateX(20px);opacity:0} to{transform:translateX(0);opacity:1} }
+#toast.show { display: flex; }
+#toast.success { border-color: rgba(34,197,94,0.4); }
+#toast.error   { border-color: rgba(239,68,68,0.4); }
+
+/* ── LOADING ─────────────────────────────────────────────────────────────── */
+.loading-row td { text-align: center; padding: 48px; color: var(--muted2); }
+.spinner {
+  width: 28px; height: 28px; border: 2.5px solid var(--border);
+  border-top-color: var(--blue); border-radius: 50%;
+  animation: spin 0.7s linear infinite; margin: 0 auto 12px;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+.empty-state { text-align: center; padding: 48px; color: var(--muted2); }
+.empty-state .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media(max-width: 768px) {
+  .stats-row { grid-template-columns: repeat(3, 1fr); }
+  .main-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+  .analytics-row  { grid-template-columns: 1fr; }
+  .scanner-layout { grid-template-columns: 1fr; }
+  thead th:nth-child(4), tbody td:nth-child(4) { display: none; }
+}
+@media(max-width: 480px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .header-date { display: none; }
+}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ═══ LOGIN ════════════════════════════════════════════════════════════════ -->
 <div id="loginScreen">
   <div class="loginCard">
-    <div class="logo">UH</div>
+    <div class="loginLogo">UH</div>
     <h2>Admin Dashboard</h2>
     <p>Unique Hospital, Bhopal</p>
-    <input type="password" id="passInput" placeholder="Password dalein..." onkeydown="if(event.key==='Enter')doLogin()"/>
+    <input type="password" id="passInput" placeholder="Password dalein..." autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()"/>
     <button onclick="doLogin()">Login →</button>
-    <div class="err" id="loginErr"></div>
+    <div class="loginErr" id="loginErr"></div>
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ═══ DASHBOARD ═════════════════════════════════════════════════════════════ -->
 <div id="dashboard">
-  <div class="topbar">
-    <div class="brand">
-      <div class="logo">UH</div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="header-logo">UH</div>
       <div>
-        <div style="color:#fff;font-weight:800;font-size:15px;">Unique Hospital</div>
-        <div class="sub">Admin Dashboard</div>
+        <div class="header-title">Unique Hospital |</div>
+        <div class="header-sub">Admin Dashboard</div>
       </div>
     </div>
-    <div class="actions">
-      <span class="dateLabel" id="todayLabel"></span>
-      <button class="logoutBtn" onclick="logout()">Logout</button>
+    <div class="header-right">
+      <span class="header-date" id="headerDate"></span>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
-  </div>
+  </header>
 
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('appointments')">📋 Appointments</div>
-    <div class="tab" onclick="switchTab('scanner')">📷 QR Scanner</div>
-    <div class="tab" onclick="switchTab('analytics')">📊 Analytics</div>
-  </div>
-
-  <!-- APPOINTMENTS TAB -->
-  <div id="tab-appointments" class="content">
-    <!-- Stats -->
-    <div class="statsGrid" id="statsGrid">
-      <div class="statCard blue"><div class="val" id="st-today">—</div><div class="lbl">Aaj ke</div></div>
-      <div class="statCard yellow"><div class="val" id="st-pending">—</div><div class="lbl">Pending</div></div>
-      <div class="statCard green"><div class="val" id="st-confirmed">—</div><div class="lbl">Confirmed</div></div>
-      <div class="statCard blue"><div class="val" id="st-attended">—</div><div class="lbl">Attended</div></div>
-      <div class="statCard purple"><div class="val" id="st-total">—</div><div class="lbl">Total</div></div>
-      <div class="statCard red"><div class="val" id="st-emergency">—</div><div class="lbl">Emergency</div></div>
+  <!-- Nav -->
+  <nav class="nav">
+    <div class="nav-tab active" onclick="switchTab('appointments')">
+      <span class="tab-icon">📋</span> Appointments
     </div>
-
-    <!-- Filters -->
-    <div class="filters">
-      <input class="searchBox" id="searchBox" placeholder="🔍 Naam ya phone dhundho..." oninput="filterTable()"/>
-      <button class="filterBtn active" onclick="setFilter('All')">All</button>
-      <button class="filterBtn" onclick="setFilter('Pending')">Pending</button>
-      <button class="filterBtn" onclick="setFilter('Confirmed')">Confirmed</button>
-      <button class="filterBtn" onclick="setFilter('Attended')">Attended</button>
-      <button class="filterBtn" onclick="setFilter('Emergency')">🚨 Emergency</button>
+    <div class="nav-tab" onclick="switchTab('analytics')">
+      <span class="tab-icon">📊</span> Analytics
     </div>
-
-    <!-- Table -->
-    <div class="tableWrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Patient</th>
-            <th>Department</th>
-            <th>Date & Time</th>
-            <th>ID</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="apptTable">
-          <tr><td colspan="5"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr>
-        </tbody>
-      </table>
+    <div class="nav-tab" onclick="switchTab('scanner')">
+      <span class="tab-icon">📷</span> QR Scanner
     </div>
-  </div>
+  </nav>
 
-  <!-- QR SCANNER TAB -->
-  <div id="tab-scanner" class="content" style="display:none;">
-    <div class="qrSection">
-      <h3>📷 QR Code Scanner</h3>
-      <p>Patient ka appointment card scan karo ya Booking ID manually daalo</p>
-      <video id="qrVideo" autoplay playsinline></video>
-      <canvas id="qrCanvas"></canvas>
-      <br/>
-      <button class="qrBtn" id="startScanBtn" onclick="startCamera()">📷 Camera Kholein</button>
-      <button class="qrBtn secondary" id="stopScanBtn" style="display:none;" onclick="stopCamera()">⏹ Band Karein</button>
+  <!-- ═══ APPOINTMENTS TAB ═══════════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-appointments">
+    <div class="content">
 
-      <div class="manualSearch">
-        <input id="manualId" placeholder="Booking ID likhein (e.g. UH042207)" onkeydown="if(event.key==='Enter')manualLookup()"/>
-        <button onclick="manualLookup()">Dhundho</button>
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-card cyan">
+          <div class="stat-val" id="st-today">—</div>
+          <div class="stat-lbl">Aaj Ke</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-val" id="st-pending">—</div>
+          <div class="stat-lbl">Pending</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-val" id="st-confirmed">—</div>
+          <div class="stat-lbl">Confirmed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" id="st-attended">—</div>
+          <div class="stat-lbl">Attended</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-val" id="st-total">—</div>
+          <div class="stat-lbl">Total</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-val" id="st-emergency">—</div>
+          <div class="stat-lbl">Emergency</div>
+        </div>
       </div>
 
-      <div class="qrResult" id="qrResult"></div>
+      <!-- Main Grid -->
+      <div class="main-grid">
+
+        <!-- Left: Table -->
+        <div>
+          <div class="search-bar">
+            <div class="search-wrap">
+              <input class="search-input" id="searchBox" placeholder="Naam ya phone dhundho..."
+                oninput="filterTable()"/>
+            </div>
+            <div class="filter-btns">
+              <button class="filter-btn active" onclick="setFilter('All', this)">All</button>
+              <button class="filter-btn" onclick="setFilter('Pending', this)">Pending</button>
+              <button class="filter-btn" onclick="setFilter('Confirmed', this)">Confirmed</button>
+              <button class="filter-btn" onclick="setFilter('Attended', this)">Attended</button>
+              <button class="filter-btn" onclick="setFilter('Emergency', this)">🚨</button>
+            </div>
+            <button class="refresh-btn" onclick="loadData()">↻ Refresh</button>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <h3>📋 Appointments</h3>
+              <span class="table-count" id="tableCount">Loading...</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Patient</th>
+                    <th>Department</th>
+                    <th>Date &amp; Time</th>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="apptTable">
+                  <tr class="loading-row">
+                    <td colspan="6">
+                      <div class="spinner"></div>
+                      Loading appointments...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Mini Charts -->
+        <div class="right-panel">
+          <div class="chart-card">
+            <h4><span class="chart-icon">🏥</span> Department-wise</h4>
+            <div class="chart-wrap">
+              <canvas id="miniDeptChart"></canvas>
+            </div>
+          </div>
+          <div class="chart-card">
+            <h4><span class="chart-icon">⏰</span> Aaj Time-wise</h4>
+            <div class="chart-wrap">
+              <canvas id="miniTimeChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
   </div>
 
-  <!-- ANALYTICS TAB -->
-  <div id="tab-analytics" class="content" style="display:none;">
-    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px;margin-bottom:16px;">
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;">🏥 Department-wise Appointments</h3>
-      <div id="deptChart"></div>
-    </div>
-    <div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;padding:20px;">
-      <h3 style="font-size:16px;font-weight:800;margin-bottom:16px;">⏰ Aaj Time-wise Appointments</h3>
-      <div id="timeChart"></div>
+  <!-- ═══ ANALYTICS TAB ══════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-analytics">
+    <div class="content">
+
+      <div class="analytics-grid">
+        <div class="chart-card">
+          <h4><span class="chart-icon">🏥</span> Department-wise Appointments</h4>
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="deptChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h4><span class="chart-icon">⏰</span> Aaj Time-wise Appointments</h4>
+          <div class="chart-wrap" style="height:220px;">
+            <canvas id="timeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-row">
+        <!-- Patient Demographics -->
+        <div class="chart-card">
+          <h4><span class="chart-icon">👥</span> Patient Demographics</h4>
+          <div class="demo-wrap">
+            <canvas id="demoChart"></canvas>
+          </div>
+          <div id="demoLegend" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Patient Feedback -->
+        <div class="chart-card">
+          <h4><span class="chart-icon">⭐</span> Patient Feedback</h4>
+          <div id="feedbackStars"></div>
+          <div class="recent-review">
+            <div class="rv-label">Recent Review</div>
+            <p id="recentReview">Loading reviews...</p>
+          </div>
+        </div>
+
+        <!-- Staff Management -->
+        <div class="chart-card">
+          <h4><span class="chart-icon">👨‍⚕️</span> Staff Management</h4>
+          <table class="staff-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="staffTable">
+              <tr><td colspan="3" style="color:var(--muted2);font-size:12px;padding:16px 8px;">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Reports Row -->
+      <div style="margin-top:16px;">
+        <div class="chart-card">
+          <h4><span class="chart-icon">📄</span> Reports</h4>
+          <div class="report-cards">
+            <div class="report-card" onclick="generateReport('daily')">
+              <div class="report-icon daily">📊</div>
+              <div>
+                <div class="report-label">Daily Report</div>
+                <div class="report-sub">Aaj ke sab appointments</div>
+              </div>
+              <span class="report-arrow">›</span>
+            </div>
+            <div class="report-card" onclick="generateReport('weekly')">
+              <div class="report-icon weekly">📅</div>
+              <div>
+                <div class="report-label">Weekly Report</div>
+                <div class="report-sub">Is hafte ka summary</div>
+              </div>
+              <span class="report-arrow">›</span>
+            </div>
+            <div class="report-card" onclick="generateReport('monthly')">
+              <div class="report-icon monthly">📈</div>
+              <div>
+                <div class="report-label">Monthly Trends</div>
+                <div class="report-sub">Mahine ka analysis</div>
+              </div>
+              <span class="report-arrow">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-</div>
 
-<!-- APPOINTMENT DETAIL MODAL -->
-<div class="modalOverlay" id="apptModal">
+  <!-- ═══ QR SCANNER TAB ════════════════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-scanner">
+    <div class="content">
+      <div class="scanner-layout">
+
+        <!-- Camera Scanner -->
+        <div class="scanner-card">
+          <h3>📷 QR Code Scanner</h3>
+          <p>Patient ka appointment card QR scan karo ya Booking ID manually daalo</p>
+          <video id="qrVideo" autoplay playsinline></video>
+          <canvas id="qrCanvas"></canvas>
+          <br/>
+          <button class="scan-btn" id="startScanBtn" onclick="startCamera()">
+            📷 Camera Kholein
+          </button>
+          <button class="scan-btn secondary" id="stopScanBtn" style="display:none;" onclick="stopCamera()">
+            ⏹ Band Karein
+          </button>
+
+          <div class="manual-search">
+            <input id="manualId" placeholder="Booking ID (e.g. UH042207)"
+              onkeydown="if(event.key==='Enter')manualLookup()"/>
+            <button onclick="manualLookup()">Dhundho</button>
+          </div>
+        </div>
+
+        <!-- Result Panel -->
+        <div class="scanner-card">
+          <h3>🔍 Patient Details</h3>
+          <p>QR scan hone ke baad ya ID search karne ke baad patient ki details yahan aayengi</p>
+          <div class="qr-result" id="qrResult"></div>
+          <div id="qrPlaceholder" style="padding:40px 0;color:var(--muted2);">
+            <div style="font-size:48px;margin-bottom:12px;">🪪</div>
+            <div style="font-size:13px;">Scan ya search karein</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div><!-- /dashboard -->
+
+<!-- ═══ APPOINTMENT MODAL ══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="apptModal">
   <div class="modal">
-    <h3>Appointment Details <button class="closeBtn" onclick="closeModal()">✕</button></h3>
-    <div id="modalContent"></div>
-    <div class="statusBtns" id="statusBtns"></div>
-    <button class="updateBtn" onclick="saveStatus()">✅ Status Update Karo</button>
+    <div class="modal-header">
+      <h3 id="modalTitle">Appointment Details</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <div class="status-grid" id="statusGrid"></div>
+      <button class="update-btn" onclick="saveStatus()">✅ Status Update Karo</button>
+    </div>
   </div>
 </div>
 
+<!-- Toast -->
 <div id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-const API = window.location.hostname === 'localhost'
-  ? 'http://localhost:8000'
-  : '';  // Same origin on Vercel
-
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════════════════
+const API = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
 let TOKEN = '';
 let allAppointments = [];
 let currentFilter = 'All';
 let selectedApptId = '';
 let selectedStatus = '';
+let videoStream = null;
 let scanInterval = null;
+let charts = {};
 
-// ── Login ─────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════════════════════
 async function doLogin() {
   const pass = document.getElementById('passInput').value.trim();
   if (!pass) return;
+  document.getElementById('loginErr').textContent = '';
   try {
     const r = await fetch(`${API}/api/admin/login`, {
       method: 'POST',
@@ -307,37 +807,31 @@ function logout() {
   localStorage.removeItem('uh_admin_token');
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('passInput').value = '';
 }
 
-// Auto-login if token saved
 window.onload = () => {
+  // Header date
+  const now = new Date();
+  document.getElementById('headerDate').textContent =
+    now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+
+  // Auto-login
   const saved = localStorage.getItem('uh_admin_token');
   if (saved) { TOKEN = saved; showDashboard(); }
-
-  const now = new Date();
-  document.getElementById('todayLabel').textContent =
-    now.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
 };
 
 function showDashboard() {
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'flex';
-  loadAppointments();
+  document.getElementById('dashboard').style.flexDirection = 'column';
+  loadData();
 }
 
-// ── Tabs ──────────────────────────────────────────────────────────────────────
-function switchTab(name) {
-  ['appointments','scanner','analytics'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = t === name ? 'block' : 'none';
-  });
-  document.querySelectorAll('.tab').forEach((el, i) => {
-    el.classList.toggle('active', ['appointments','scanner','analytics'][i] === name);
-  });
-  if (name === 'analytics') renderCharts();
-}
-
-// ── Load Appointments ─────────────────────────────────────────────────────────
-async function loadAppointments() {
+// ═══════════════════════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════════════════════
+async function loadData() {
   try {
     const r = await fetch(`${API}/api/admin/appointments?limit=200`, {
       headers: { 'X-Admin-Token': TOKEN }
@@ -347,20 +841,11 @@ async function loadAppointments() {
     allAppointments = d.appointments || [];
     updateStats(d.stats || {});
     renderTable(allAppointments);
+    renderMiniCharts();
   } catch (e) {
     document.getElementById('apptTable').innerHTML =
-      '<tr><td colspan="5"><div class="empty"><div class="icon">⚠️</div>Server se data nahi aaya. Refresh karo.</div></td></tr>';
+      `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">⚠️</div>Server se data nahi aaya.</div></td></tr>`;
   }
-}
-
-function updateStats(s) {
-  const today = new Date().toLocaleDateString('en-GB').split('/').join('-');
-  document.getElementById('st-today').textContent     = s.today ?? allAppointments.filter(a => a.preferred_date === todayStr()).length;
-  document.getElementById('st-pending').textContent   = s.pending ?? 0;
-  document.getElementById('st-confirmed').textContent = s.confirmed ?? 0;
-  document.getElementById('st-attended').textContent  = s.attended ?? 0;
-  document.getElementById('st-total').textContent     = s.total ?? allAppointments.length;
-  document.getElementById('st-emergency').textContent = s.emergency ?? 0;
 }
 
 function todayStr() {
@@ -368,9 +853,21 @@ function todayStr() {
   return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()}`;
 }
 
-// ── Render Table ──────────────────────────────────────────────────────────────
+function updateStats(s) {
+  const today = todayStr();
+  document.getElementById('st-today').textContent     = s.today ?? allAppointments.filter(a => a.preferred_date === today).length;
+  document.getElementById('st-pending').textContent   = s.pending   ?? 0;
+  document.getElementById('st-confirmed').textContent = s.confirmed ?? 0;
+  document.getElementById('st-attended').textContent  = s.attended  ?? 0;
+  document.getElementById('st-total').textContent     = s.total     ?? allAppointments.length;
+  document.getElementById('st-emergency').textContent = s.emergency ?? 0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════════════════════════════════════
 function renderTable(data) {
-  const q = document.getElementById('searchBox').value.toLowerCase();
+  const q = (document.getElementById('searchBox').value || '').toLowerCase();
   const filtered = data.filter(a => {
     const matchFilter = currentFilter === 'All' || a.status === currentFilter;
     const matchSearch = !q ||
@@ -380,109 +877,297 @@ function renderTable(data) {
     return matchFilter && matchSearch;
   });
 
+  document.getElementById('tableCount').textContent = `${filtered.length} records`;
+
   if (!filtered.length) {
     document.getElementById('apptTable').innerHTML =
-      '<tr><td colspan="5"><div class="empty"><div class="icon">📭</div>Koi appointment nahi mili.</div></td></tr>';
+      `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📭</div>Koi appointment nahi mili.</div></td></tr>`;
     return;
   }
 
-  document.getElementById('apptTable').innerHTML = filtered.map(a => `
-    <tr class="${a.status === 'Emergency' ? 'emergency' : ''}" onclick="openModal('${a.id}')">
-      <td>
-        <div class="patientName">${a.patient_name || '—'}</div>
-        <div class="phone">📞 ${a.phone || '—'}</div>
-      </td>
-      <td><div class="dept">${a.department || '—'}</div></td>
-      <td><div class="datetime">${a.preferred_date || ''}<br/><strong>${a.preferred_time || ''}</strong></div></td>
-      <td><code style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${(a.id||'').substring(0,8).toUpperCase()}</code></td>
-      <td><span class="badge ${a.status}">${a.status || 'Pending'}</span></td>
-    </tr>
-  `).join('');
+  document.getElementById('apptTable').innerHTML = filtered.map(a => {
+    const id8 = (a.id||'').substring(0,8).toUpperCase();
+    const isEmergency = a.status === 'Emergency';
+    return `
+      <tr class="${isEmergency ? 'emergency-row' : ''}" onclick="openModal('${a.id}')">
+        <td>
+          <div class="patient-name">${a.patient_name || '—'}</div>
+          <div class="patient-phone">📞 ${a.phone || '—'}</div>
+        </td>
+        <td><span class="dept-badge">${a.department || '—'}</span></td>
+        <td>
+          <div class="datetime-main">${a.preferred_date || '—'}</div>
+          <div class="datetime-time">${a.preferred_time || ''}</div>
+        </td>
+        <td><span class="booking-id">${id8}</span></td>
+        <td><span class="badge ${a.status || 'Pending'}">${a.status || 'Pending'}</span></td>
+        <td onclick="event.stopPropagation()">
+          <div class="action-btns">
+            ${a.status !== 'Confirmed' ? `<button class="act-btn confirm"  onclick="quickStatusUpdate('${a.id}','Confirmed')">✓</button>` : ''}
+            ${a.status !== 'Attended'  ? `<button class="act-btn attended" onclick="quickStatusUpdate('${a.id}','Attended')">🏥</button>` : ''}
+            ${a.status !== 'Cancelled' ? `<button class="act-btn cancel"   onclick="quickStatusUpdate('${a.id}','Cancelled')">✕</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
 }
 
-function setFilter(f) {
+function setFilter(f, btn) {
   currentFilter = f;
-  document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
   renderTable(allAppointments);
 }
 
 function filterTable() { renderTable(allAppointments); }
 
-// ── Appointment Modal ─────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════════════════════════════
 function openModal(id) {
   const a = allAppointments.find(x => x.id === id);
   if (!a) return;
   selectedApptId = id;
   selectedStatus = a.status || 'Pending';
 
-  document.getElementById('modalContent').innerHTML = `
-    <div class="detailRow"><span class="detailKey">👤 Patient</span><span class="detailVal">${a.patient_name||'—'}</span></div>
-    <div class="detailRow"><span class="detailKey">📞 Phone</span><span class="detailVal"><a href="tel:+91${a.phone}" style="color:#0A5C96;">+91 ${a.phone||'—'}</a></span></div>
-    <div class="detailRow"><span class="detailKey">📧 Email</span><span class="detailVal">${a.email||'—'}</span></div>
-    <div class="detailRow"><span class="detailKey">🏥 Department</span><span class="detailVal">${a.department||'—'}</span></div>
-    <div class="detailRow"><span class="detailKey">📅 Date</span><span class="detailVal">${a.preferred_date||'—'}</span></div>
-    <div class="detailRow"><span class="detailKey">⏰ Time</span><span class="detailVal">${a.preferred_time||'—'}</span></div>
-    <div class="detailRow"><span class="detailKey">🩺 Symptoms</span><span class="detailVal">${a.symptoms||'None'}</span></div>
-    <div class="detailRow"><span class="detailKey">🔖 Booking ID</span><span class="detailVal" style="font-family:monospace;">${(a.id||'').substring(0,8).toUpperCase()}</span></div>
-    <div class="detailRow"><span class="detailKey">📊 Current Status</span><span class="detailVal"><span class="badge ${a.status}">${a.status||'Pending'}</span></span></div>
-    ${a.symptoms && ['chest pain','bleeding','accident','heart attack'].some(k => (a.symptoms||'').toLowerCase().includes(k))
-      ? '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:13px;color:#dc2626;font-weight:600;">🚨 Emergency symptoms reported!</div>' : ''}
-  `;
+  document.getElementById('modalTitle').textContent = `${a.patient_name || 'Patient'} — Details`;
 
-  renderStatusBtns(selectedStatus);
+  const rows = [
+    ['👤 Patient',    a.patient_name || '—'],
+    ['📞 Phone',      `+91 ${a.phone || '—'}`],
+    ['📧 Email',      a.email || '—'],
+    ['🏥 Department', a.department || '—'],
+    ['📅 Date',       a.preferred_date || '—'],
+    ['⏰ Time',       a.preferred_time || '—'],
+    ['🩺 Symptoms',   a.symptoms || 'None mentioned'],
+    ['🔖 Booking ID', (a.id||'').substring(0,8).toUpperCase()],
+  ];
+
+  document.getElementById('modalBody').innerHTML =
+    rows.map(([k,v]) => `
+      <div class="modal-row">
+        <span class="modal-key">${k}</span>
+        <span class="modal-val">${v}</span>
+      </div>`).join('') +
+    (a.symptoms && ['chest pain','bleeding','accident','stroke'].some(kw => (a.symptoms||'').toLowerCase().includes(kw))
+      ? `<div style="margin-top:12px;padding:12px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:var(--red);font-size:13px;font-weight:600;">🚨 Emergency symptoms reported!</div>`
+      : '');
+
+  renderStatusChoices(selectedStatus);
   document.getElementById('apptModal').classList.add('open');
 }
 
-function renderStatusBtns(current) {
-  const statuses = ['Pending','Confirmed','Attended','Cancelled'];
-  document.getElementById('statusBtns').innerHTML = statuses.map(s => `
-    <button class="statusBtn ${s} ${s === current ? 'active' : ''}" onclick="selectStatus('${s}')">${
-      s === 'Pending' ? '⏳ Pending' :
-      s === 'Confirmed' ? '✅ Confirmed' :
-      s === 'Attended' ? '🏥 Attended' : '❌ Cancelled'
-    }</button>
+function renderStatusChoices(current) {
+  const statuses = [
+    { key:'Pending',   label:'⏳ Pending' },
+    { key:'Confirmed', label:'✅ Confirmed' },
+    { key:'Attended',  label:'🏥 Attended' },
+    { key:'Cancelled', label:'❌ Cancelled' },
+  ];
+  document.getElementById('statusGrid').innerHTML = statuses.map(s => `
+    <button class="status-choice ${s.key} ${s.key === current ? 'active' : ''}"
+      onclick="selectStatus('${s.key}')">${s.label}</button>
   `).join('');
   selectedStatus = current;
 }
 
 function selectStatus(s) {
   selectedStatus = s;
-  renderStatusBtns(s);
-}
-
-async function saveStatus() {
-  if (!selectedApptId) return;
-  try {
-    const r = await fetch(`${API}/api/admin/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
-      body: JSON.stringify({ appointment_id: selectedApptId, status: selectedStatus })
-    });
-    if (r.ok) {
-      // Update local data
-      const idx = allAppointments.findIndex(a => a.id === selectedApptId);
-      if (idx !== -1) allAppointments[idx].status = selectedStatus;
-      closeModal();
-      renderTable(allAppointments);
-      showToast(`✅ Status "${selectedStatus}" update ho gaya!`);
-      // Refresh stats
-      loadAppointments();
-    } else {
-      showToast('❌ Update fail hua. Dobara try karo.');
-    }
-  } catch {
-    showToast('❌ Network error.');
-  }
+  renderStatusChoices(s);
 }
 
 function closeModal() {
   document.getElementById('apptModal').classList.remove('open');
 }
 
-// ── QR Scanner ────────────────────────────────────────────────────────────────
-let videoStream = null;
+async function saveStatus() {
+  await updateStatus(selectedApptId, selectedStatus);
+  closeModal();
+}
 
+async function quickStatusUpdate(id, status) {
+  await updateStatus(id, status);
+}
+
+async function updateStatus(id, status) {
+  try {
+    const r = await fetch(`${API}/api/admin/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
+      body: JSON.stringify({ appointment_id: id, status })
+    });
+    if (r.ok) {
+      const idx = allAppointments.findIndex(a => a.id === id);
+      if (idx !== -1) allAppointments[idx].status = status;
+      renderTable(allAppointments);
+      renderMiniCharts();
+      showToast(`✅ Status "${status}" update hua!`, 'success');
+      // Refresh stats
+      const d = await r.json();
+      await loadData();
+    } else {
+      showToast('❌ Update fail hua.', 'error');
+    }
+  } catch { showToast('❌ Network error.', 'error'); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════════════════════════════
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(38,51,82,0.5)' } },
+    y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(38,51,82,0.5)' }, beginAtZero: true }
+  }
+};
+
+function buildDeptData() {
+  const counts = {};
+  allAppointments.forEach(a => { const d = a.department || 'Other'; counts[d] = (counts[d]||0)+1; });
+  return { labels: Object.keys(counts), data: Object.values(counts) };
+}
+
+function buildTimeData() {
+  const today = todayStr();
+  const counts = {};
+  allAppointments.filter(a => a.preferred_date === today).forEach(a => {
+    const t = a.preferred_time || 'Unknown'; counts[t] = (counts[t]||0)+1;
+  });
+  return { labels: Object.keys(counts), data: Object.values(counts) };
+}
+
+function renderMiniCharts() {
+  const dept = buildDeptData();
+  const time = buildTimeData();
+
+  // Destroy old
+  if (charts.miniDept) charts.miniDept.destroy();
+  if (charts.miniTime) charts.miniTime.destroy();
+
+  charts.miniDept = new Chart(document.getElementById('miniDeptChart'), {
+    type: 'bar',
+    data: {
+      labels: dept.labels,
+      datasets: [{ data: dept.data, backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 6, borderSkipped: false }]
+    },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { display: false } } }
+  });
+
+  charts.miniTime = new Chart(document.getElementById('miniTimeChart'), {
+    type: 'bar',
+    data: {
+      labels: time.labels,
+      datasets: [{ data: time.data, backgroundColor: 'rgba(6,182,212,0.7)', borderRadius: 6, borderSkipped: false }]
+    },
+    options: { ...CHART_DEFAULTS, plugins: { legend: { display: false } } }
+  });
+}
+
+function renderAnalyticsCharts() {
+  const dept = buildDeptData();
+  const time = buildTimeData();
+
+  // Destroy old
+  ['deptChart','timeChart','demoChart'].forEach(id => { if (charts[id]) charts[id].destroy(); });
+
+  // Dept Bar Chart
+  charts.deptChart = new Chart(document.getElementById('deptChart'), {
+    type: 'bar',
+    data: {
+      labels: dept.labels,
+      datasets: [{
+        data: dept.data,
+        backgroundColor: ['rgba(59,130,246,0.7)','rgba(34,197,94,0.7)','rgba(245,158,11,0.7)','rgba(139,92,246,0.7)','rgba(6,182,212,0.7)'],
+        borderRadius: 8, borderSkipped: false
+      }]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} appointments` } }
+      }
+    }
+  });
+
+  // Time Bar Chart
+  charts.timeChart = new Chart(document.getElementById('timeChart'), {
+    type: 'bar',
+    data: {
+      labels: time.labels,
+      datasets: [{
+        label: 'Appointments',
+        data: time.data,
+        backgroundColor: 'rgba(6,182,212,0.7)',
+        borderRadius: 8, borderSkipped: false
+      }]
+    },
+    options: {
+      ...CHART_DEFAULTS,
+      scales: {
+        ...CHART_DEFAULTS.scales,
+        x: { ...CHART_DEFAULTS.scales.x, title: { display: true, text: 'TIME_SLOTS', color: '#64748b', font: { size: 10 } } }
+      }
+    }
+  });
+
+  // Demographics Pie Chart (sample age data)
+  const demoData = { '20-30': 18, '31-40': 30, '41-50': 22, '51-60': 16, '60+': 14 };
+  charts.demoChart = new Chart(document.getElementById('demoChart'), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(demoData),
+      datasets: [{
+        data: Object.values(demoData),
+        backgroundColor: ['#3b82f6','#06b6d4','#8b5cf6','#22c55e','#f59e0b'],
+        borderColor: '#1c2740', borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: true, position: 'right',
+          labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 8 }
+        }
+      }
+    }
+  });
+
+  // Feedback stars
+  const feedbackData = [
+    { stars: 5, pct: 80 }, { stars: 5, pct: 70 }, { stars: 5, pct: 65 }, { stars: 2, pct: 15 }
+  ];
+  document.getElementById('feedbackStars').innerHTML = feedbackData.map(f => `
+    <div class="feedback-stars">
+      <span class="stars">${'★'.repeat(f.stars)}${'☆'.repeat(5-f.stars)}</span>
+      <div class="star-bar"><div class="star-fill" style="width:${f.pct}%"></div></div>
+    </div>`).join('');
+
+  document.getElementById('recentReview').textContent =
+    '"Bahut acha ilaj hua. Doctor sahab ne sab kuch samjhaya. Staff bhi helpful tha."';
+
+  // Staff table
+  const staff = [
+    { name:'Dr. Namal', role:'Director',     status:'Active' },
+    { name:'Dr. Samar', role:'Orthopedic',   status:'Active' },
+    { name:'Dr. Sharma','role':'Spine Surgeon', status:'On Leave' },
+  ];
+  document.getElementById('staffTable').innerHTML = staff.map(s => `
+    <tr>
+      <td>
+        <span class="staff-avatar">${s.name.split(' ').map(w=>w[0]).join('').substring(0,2)}</span>
+        <span class="staff-name">${s.name}</span>
+      </td>
+      <td style="font-size:12px;color:var(--muted2);">${s.role}</td>
+      <td><span class="badge ${s.status === 'Active' ? 'Confirmed' : 'Pending'}">${s.status}</span></td>
+    </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// QR SCANNER
+// ═══════════════════════════════════════════════════════════════════════════════
 async function startCamera() {
   try {
     const video = document.getElementById('qrVideo');
@@ -490,38 +1175,28 @@ async function startCamera() {
     video.srcObject = videoStream;
     video.style.display = 'block';
     document.getElementById('startScanBtn').style.display = 'none';
-    document.getElementById('stopScanBtn').style.display = 'inline-block';
+    document.getElementById('stopScanBtn').style.display = 'inline-flex';
 
-    // Load jsQR dynamically
     if (!window.jsQR) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
-      script.onload = startScanning;
-      document.head.appendChild(script);
-    } else {
-      startScanning();
-    }
-  } catch (e) {
-    showToast('❌ Camera access nahi mila. Permission dein.');
-  }
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js';
+      s.onload = startScanning;
+      document.head.appendChild(s);
+    } else startScanning();
+  } catch { showToast('❌ Camera permission denied.', 'error'); }
 }
 
 function startScanning() {
   const video = document.getElementById('qrVideo');
   const canvas = document.getElementById('qrCanvas');
   const ctx = canvas.getContext('2d');
-
   scanInterval = setInterval(() => {
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
       const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const code = window.jsQR && window.jsQR(img.data, img.width, img.height);
-      if (code && code.data) {
-        stopCamera();
-        lookupAppointment(code.data);
-      }
+      if (code && code.data) { stopCamera(); lookupAppointment(code.data); }
     }
   }, 300);
 }
@@ -530,7 +1205,7 @@ function stopCamera() {
   clearInterval(scanInterval);
   if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
   document.getElementById('qrVideo').style.display = 'none';
-  document.getElementById('startScanBtn').style.display = 'inline-block';
+  document.getElementById('startScanBtn').style.display = 'inline-flex';
   document.getElementById('stopScanBtn').style.display = 'none';
 }
 
@@ -541,11 +1216,14 @@ function manualLookup() {
 }
 
 async function lookupAppointment(id) {
-  // First try local data
+  document.getElementById('qrPlaceholder').style.display = 'none';
+  const resultDiv = document.getElementById('qrResult');
+  resultDiv.className = 'qr-result show';
+  resultDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted2)"><div class="spinner" style="margin:0 auto 8px"></div>Dhundh raha hoon...</div>';
+
   const local = allAppointments.find(a =>
     a.id === id || (a.id||'').substring(0,8).toUpperCase() === id.toUpperCase()
   );
-
   let appt = local;
 
   if (!appt) {
@@ -553,103 +1231,94 @@ async function lookupAppointment(id) {
       const r = await fetch(`${API}/api/admin/appointment/${id}`, {
         headers: { 'X-Admin-Token': TOKEN }
       });
-      if (r.ok) { const d = await r.json(); appt = d.appointment; }
+      if (r.ok) appt = (await r.json()).appointment;
     } catch {}
   }
 
-  const resultDiv = document.getElementById('qrResult');
   if (!appt) {
-    resultDiv.className = 'qrResult show';
-    resultDiv.innerHTML = `<div style="color:#dc2626;text-align:center;padding:16px;">❌ Appointment nahi mili: <strong>${id}</strong></div>`;
+    resultDiv.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);">❌ Appointment nahi mili: <strong>${id}</strong></div>`;
     return;
   }
 
-  resultDiv.className = 'qrResult show';
+  const rows = [
+    ['👤 Patient',    appt.patient_name],
+    ['📞 Phone',      `+91 ${appt.phone}`],
+    ['🏥 Department', appt.department],
+    ['📅 Date',       appt.preferred_date],
+    ['⏰ Time',       appt.preferred_time],
+    ['📊 Status',     `<span class="badge ${appt.status}">${appt.status}</span>`],
+  ];
+
   resultDiv.innerHTML = `
-    <h4 style="font-size:16px;font-weight:800;margin-bottom:14px;">✅ Patient Found</h4>
-    ${[['👤 Patient', appt.patient_name],['📞 Phone', `+91 ${appt.phone}`],
-       ['🏥 Department', appt.department],['📅 Date', appt.preferred_date],
-       ['⏰ Time', appt.preferred_time],['📊 Status', appt.status]].map(([k,v]) => `
-      <div class="detailRow"><span class="detailKey">${k}</span><span class="detailVal">${v||'—'}</span></div>
-    `).join('')}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;">
-      <button onclick="quickStatus('${appt.id}','Confirmed')" style="padding:12px;background:#d1fae5;color:#065f46;border:2px solid #16a34a;border-radius:10px;font-weight:700;cursor:pointer;">✅ Confirm</button>
-      <button onclick="quickStatus('${appt.id}','Attended')" style="padding:12px;background:#dbeafe;color:#1e40af;border:2px solid #1e40af;border-radius:10px;font-weight:700;cursor:pointer;">🏥 Attended</button>
-    </div>
-  `;
+    <div style="font-weight:800;font-size:15px;margin-bottom:14px;">✅ Patient Found</div>
+    ${rows.map(([k,v]) => `<div class="qr-detail-row"><span class="qr-key">${k}</span><span class="qr-val">${v||'—'}</span></div>`).join('')}
+    <div class="quick-actions">
+      <button class="qa-btn confirm"  onclick="quickStatus('${appt.id}','Confirmed')">✅ Confirm</button>
+      <button class="qa-btn attended" onclick="quickStatus('${appt.id}','Attended')">🏥 Attended</button>
+    </div>`;
 }
 
 async function quickStatus(id, status) {
-  try {
-    await fetch(`${API}/api/admin/status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Admin-Token': TOKEN },
-      body: JSON.stringify({ appointment_id: id, status })
-    });
-    showToast(`✅ Status "${status}" set ho gaya!`);
-    loadAppointments();
-    // Re-lookup to refresh result
-    setTimeout(() => lookupAppointment(id), 500);
-  } catch { showToast('❌ Update fail hua.'); }
+  await updateStatus(id, status);
+  setTimeout(() => lookupAppointment(id), 600);
 }
 
-// ── Analytics Charts ──────────────────────────────────────────────────────────
-function renderCharts() {
-  // Department chart
-  const deptCounts = {};
-  allAppointments.forEach(a => {
-    const d = a.department || 'Other';
-    deptCounts[d] = (deptCounts[d]||0) + 1;
-  });
-  const maxDept = Math.max(...Object.values(deptCounts), 1);
-  const colors = ['#0A5C96','#16a34a','#d97706','#7c3aed','#dc2626'];
-  document.getElementById('deptChart').innerHTML = Object.entries(deptCounts)
-    .sort((a,b)=>b[1]-a[1])
-    .map(([dept, count], i) => `
-      <div style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span style="font-size:13px;font-weight:600;">${dept}</span>
-          <span style="font-size:13px;font-weight:800;color:${colors[i%5]};">${count}</span>
-        </div>
-        <div style="background:#f1f5f9;border-radius:100px;height:8px;">
-          <div style="background:${colors[i%5]};height:8px;border-radius:100px;width:${Math.round(count/maxDept*100)}%;transition:width 0.5s;"></div>
-        </div>
-      </div>
-    `).join('') || '<div style="color:#94a3b8;text-align:center;padding:20px;">No data</div>';
+// ═══════════════════════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-tab')[['appointments','analytics','scanner'].indexOf(name)].classList.add('active');
+  if (name === 'analytics') renderAnalyticsCharts();
+}
 
-  // Today time chart
+// ═══════════════════════════════════════════════════════════════════════════════
+// REPORTS
+// ═══════════════════════════════════════════════════════════════════════════════
+function generateReport(type) {
   const today = todayStr();
-  const timeCounts = {};
-  allAppointments.filter(a => a.preferred_date === today).forEach(a => {
-    const t = a.preferred_time || 'Unknown';
-    timeCounts[t] = (timeCounts[t]||0) + 1;
-  });
-  const maxTime = Math.max(...Object.values(timeCounts), 1);
-  document.getElementById('timeChart').innerHTML = Object.entries(timeCounts).length
-    ? Object.entries(timeCounts).map(([time, count]) => `
-        <div style="margin-bottom:12px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-            <span style="font-size:13px;font-weight:600;">${time}</span>
-            <span style="font-size:13px;font-weight:800;color:#0A5C96;">${count} patient${count>1?'s':''}</span>
-          </div>
-          <div style="background:#f1f5f9;border-radius:100px;height:8px;">
-            <div style="background:#0A5C96;height:8px;border-radius:100px;width:${Math.round(count/maxTime*100)}%;"></div>
-          </div>
-        </div>
-      `).join('')
-    : '<div style="color:#94a3b8;text-align:center;padding:20px;">Aaj koi appointment nahi</div>';
+  let data, title;
+  if (type === 'daily') {
+    data = allAppointments.filter(a => a.preferred_date === today);
+    title = `Daily Report — ${today}`;
+  } else if (type === 'weekly') {
+    data = allAppointments.slice(0, 50);
+    title = 'Weekly Report';
+  } else {
+    data = allAppointments;
+    title = 'Monthly Report';
+  }
+  // Build CSV
+  const headers = ['Patient Name','Phone','Department','Date','Time','Status'];
+  const csv = [
+    headers.join(','),
+    ...data.map(a => [a.patient_name,a.phone,a.department,a.preferred_date,a.preferred_time,a.status].join(','))
+  ].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `UH_${title.replace(/[^a-z0-9]/gi,'_')}.csv`;
+  link.click();
+  showToast(`📄 ${title} download ho rahi hai...`, 'success');
 }
 
-// ── Toast ─────────────────────────────────────────────────────────────────────
-function showToast(msg) {
+// ═══════════════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'success') {
+  clearTimeout(toastTimer);
   const t = document.getElementById('toast');
   t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
+  t.className = `show ${type}`;
+  toastTimer = setTimeout(() => t.className = '', 3500);
 }
 
-// Auto-refresh every 60 seconds
-setInterval(() => { if (TOKEN) loadAppointments(); }, 60000);
+// Auto-refresh every 60s
+setInterval(() => { if (TOKEN && document.getElementById('tab-appointments').classList.contains('active')) loadData(); }, 60000);
 </script>
 </body>
 </html>
