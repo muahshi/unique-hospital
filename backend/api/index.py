@@ -456,38 +456,53 @@ async def admin_get_appointments(
 
 @app.get("/api/admin/appointment/{appt_id}")
 async def get_single_appointment(appt_id: str, request: Request):
-    """QR scan pe yeh route call hoga — single appointment details."""
+    """QR scan pe yeh route call hoga — single appointment details.
+    Supports: full UUID, first-8-chars short ID, or partial match."""
     if not verify_admin(request):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    # Supabase se dhundho
+    search_id = appt_id.strip().lower()
+    short_id  = search_id[:8]
+
+    # Supabase — try exact match first, then LIKE
     if supabase:
         try:
+            # Exact UUID match
             r = supabase.table("appointments").select("*").eq("id", appt_id).execute()
             if r.data: return {"appointment": r.data[0]}
-        except: pass
 
-    # Google Sheet se dhundho
+            # Partial match — fetch recent and filter in Python
+            r2 = supabase.table("appointments").select("*").order("created_at", desc=True).limit(500).execute()
+            for row in (r2.data or []):
+                row_id = (row.get("id") or "").lower()
+                if row_id.startswith(short_id) or search_id.startswith(row_id[:8]):
+                    return {"appointment": row}
+        except Exception as e:
+            logger.error(f"Supabase single lookup error: {e}")
+
+    # Google Sheet — flexible matching
     if gsheet_ws:
         try:
             rows = gsheet_ws.get_all_records()
             for row in rows:
-                if row.get("Unique_ID","").upper() == appt_id.upper():
+                uid = (row.get("Unique_ID") or "").strip().lower()
+                if uid == search_id or uid.startswith(short_id) or search_id.startswith(uid[:8]):
                     return {"appointment": {
-                        "id": row.get("Unique_ID",""),
-                        "patient_name": row.get("Patient_Name",""),
-                        "phone": row.get("Phone",""),
-                        "email": row.get("Email",""),
-                        "department": row.get("Department",""),
+                        "id":             row.get("Unique_ID",""),
+                        "patient_name":   row.get("Patient_Name",""),
+                        "phone":          row.get("Phone",""),
+                        "email":          row.get("Email",""),
+                        "department":     row.get("Department",""),
                         "preferred_date": row.get("Appointment_Date",""),
                         "preferred_time": row.get("Appointment_Time",""),
-                        "status": row.get("Status","Pending"),
-                        "symptoms": row.get("Symptoms",""),
-                        "created_at": row.get("Timestamp",""),
+                        "status":         row.get("Status","Pending"),
+                        "symptoms":       row.get("Symptoms",""),
+                        "created_at":     row.get("Timestamp",""),
                     }}
-        except: pass
+        except Exception as e:
+            logger.error(f"GSheet single lookup error: {e}")
 
-    raise HTTPException(status_code=404, detail="Appointment not found")
+    raise HTTPException(status_code=404, detail=f"Appointment not found: {appt_id}")
 
 @app.post("/api/admin/status")
 async def update_status(payload: StatusUpdate, request: Request):
